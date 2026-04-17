@@ -279,6 +279,10 @@
   </div>
   <div class="info-note">Keep this page open while moving.<br>Closing it stops sharing your location.</div>
   <button class="stop-btn" onclick="stopTracking()">Stop sharing</button>
+  <button id="pip-btn" class="btn-primary" style="background: var(--accent2); margin-top: 10px; display: none;">
+  Enable Background Mode (PiP)
+</button>
+<video id="pip-video" style="display:none;" autoplay muted loop></video>
 </div>
 
 <!-- Error screen -->
