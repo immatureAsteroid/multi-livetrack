@@ -297,6 +297,41 @@
 const params = new URLSearchParams(window.location.search);
 const SERVER_URL = params.get('server') || '';
 const SESSION_ID = params.get('session') || '';
+const pipBtn = document.getElementById('pip-btn');
+const pipVideo = document.getElementById('pip-video');
+
+// Check if PiP is supported
+if (document.pictureInPictureEnabled) {
+  pipBtn.style.display = 'block';
+}
+
+pipBtn.addEventListener('click', async () => {
+  try {
+    // 1. Create a dummy canvas to generate a video stream
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 10;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw something so the video isn't empty
+    setInterval(() => {
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, 10, 10);
+      ctx.fillStyle = 'white';
+      ctx.fillText(new Date().getSeconds(), 0, 10);
+    }, 1000);
+
+    const stream = canvas.captureStream();
+    pipVideo.srcObject = stream;
+
+    // 2. Trigger PiP
+    await pipVideo.play();
+    await pipVideo.requestPictureInPicture();
+    
+    showToast("Background Mode Active!");
+  } catch (error) {
+    console.error("PiP failed", error);
+  }
+});
 
 if (!SERVER_URL || !SESSION_ID) {
   showError('Invalid QR code', 'This link is missing required parameters. Please scan the QR code again.');
