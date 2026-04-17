@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LiveTrack — Command Center</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Socket.io -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<!-- QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1f2530;
+    --accent: #00e5a0;
+    --accent2: #00b8ff;
+    --warn: #ff9f40;
+    --danger: #ff4d4d;
+    --text: #e8ecf2;
+    --muted: #5a6478;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 52px 1fr;
+    grid-template-columns: 1fr 320px;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+  }
+  .logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text); }
+  .header-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.4s;
+  }
+  .dot.live { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+  .dot.error { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .session-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .session-id span { color: var(--accent2); }
+
+  /* ── MAP ────────────────────────────────────────────────── */
+  #map {
+    grid-column: 1;
+    grid-row: 2;
+    background: #0d1117;
+    position: relative;
+  }
+
+  /* ── SIDEBAR ────────────────────────────────────────────── */
+  #sidebar {
+    grid-column: 2;
+    grid-row: 2;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* QR panel */
+  #qr-panel {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    align-self: flex-start;
+  }
+  #qr-box {
+    background: #fff;
+    padding: 10px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 150px;
+  }
+  .qr-link {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--accent2);
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .tracker-count-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.25);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Tracker list */
+  #tracker-list-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #tracker-list-wrap::-webkit-scrollbar { width: 4px; }
+  #tracker-list-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .tracker-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tracker-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tracker-card:hover { border-color: var(--accent); transform: translateX(2px); }
+  .tracker-card:hover::before { opacity: 1; }
+  .tracker-card.offline { opacity: 0.45; }
+  .tracker-card.offline::before { background: var(--muted); opacity: 1; }
+
+  .tracker-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .tracker-status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .tracker-card.offline .tracker-status-dot { background: var(--muted); }
+
+  .tracker-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+  }
+  .meta-item {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .meta-item .val {
+    color: var(--text);
+    font-size: 10px;
+  }
+  .meta-item .val.warn { color: var(--warn); }
+  .meta-item .val.danger { color: var(--danger); }
+
+  .battery-bar {
+    width: 28px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .battery-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.5s;
+  }
+  .battery-fill.warn { background: var(--warn); }
+  .battery-fill.danger { background: var(--danger); }
+
+  .center-btn {
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--accent2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .center-btn:hover { color: var(--accent); }
+
+  /* Empty state */
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 100%;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .empty-icon { font-size: 28px; opacity: 0.3; }
+
+  /* Config overlay */
+  #config-overlay {
+    position: fixed; inset: 0;
+    background: rgba(10,12,15,0.96);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+  }
+  .config-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .config-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .config-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: -12px;
+    line-height: 1.6;
+  }
+  .config-field label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .config-field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .config-field input:focus { border-color: var(--accent2); }
+  .config-start {
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .config-start:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* Map custom marker */
+  .tracker-marker {
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    transition: transform 0.3s;
+  }
+  .tracker-marker-inner {
+    transform: rotate(45deg);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Popup styling */
+  .leaflet-popup-content-wrapper {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-popup-tip { background: var(--surface) !important; }
+  .popup-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .popup-row { font-family: 'DM Mono', monospace; font-size: 11px; color: #8899aa; margin: 2px 0; }
+  .popup-row span { color: #e8ecf2; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 30px;
+    transition: transform 0.3s;
+    z-index: 999;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Config overlay -->
+<div id="config-overlay">
+  <div class="config-box">
+    <div class="config-title">LiveTrack</div>
+    <div class="config-sub">Enter your server URL and a session name to start.<br>Share the QR code with drivers or workers to connect.</div>
+    <div class="config-field">
+      <label>Server URL</label>
+      <input id="server-url" type="text" placeholder="https://your-app.railway.app" value=""/>
+    </div>
+    <div class="config-field">
+      <label>Session name</label>
+      <input id="session-name" type="text" placeholder="Morning Route — 12 Apr" value=""/>
+    </div>
+    <button class="config-start" onclick="startSession()">Start Session →</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">Live<span>Track</span></div>
+  <div class="header-status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Not connected</span>
+  </div>
+  <div class="header-right">
+    <div class="session-id">Session: <span id="sid-display">—</span></div>
+  </div>
+</header>
+
+<div id="map"></div>
+
+<div id="sidebar">
+  <div id="qr-panel">
+    <div class="panel-label">Scan to join</div>
+    <div id="qr-box"><div id="qrcode"></div></div>
+    <div class="qr-link" id="qr-url-text">—</div>
+    <div class="tracker-count-badge"><span id="tracker-count">0</span> connected</div>
+  </div>
+  <div id="tracker-list-wrap">
+    <div id="empty-state">
+      <div class="empty-icon">📡</div>
+      <div>Waiting for trackers<br>to scan and join…</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Globals ──────────────────────────────────────────────────────────────
+let socket, map, sessionId;
+const trackers = new Map(); // id → { data, marker, card }
+const COLORS = ['#00e5a0','#00b8ff','#ff9f40','#c084fc','#fb7185','#34d399','#f472b6','#60a5fa'];
+let colorIdx = 0;
+
+// ── Map init ─────────────────────────────────────────────────────────────
+function initMap() {
+  map = L.map('map', { zoomControl: false }).setView([22.9, 78.6], 5);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    maxZoom: 19
+  }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+}
+
+// ── Session start ────────────────────────────────────────────────────────
+function startSession() {
+  const serverUrl = document.getElementById('server-url').value.trim().replace(/\/$/, '');
+  const sessionName = document.getElementById('session-name').value.trim() || 'Session-' + Date.now();
+  if (!serverUrl) { showToast('Please enter a server URL'); return; }
+
+  sessionId = encodeURIComponent(sessionName.replace(/\s+/g, '-').toLowerCase()) + '-' + Math.random().toString(36).slice(2,7);
+
+  // Build tracker URL
+  const trackerUrl = `${window.location.origin}/mobile.html?server=${encodeURIComponent(serverUrl)}&session=${encodeURIComponent(sessionId)}`;
+
+  // Generate QR
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById('qrcode'), {
+    text: trackerUrl,
+    width: 130,
+    height: 130,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('qr-url-text').textContent = trackerUrl;
+  document.getElementById('sid-display').textContent = sessionId;
+
+  // Connect socket
+  socket = io(serverUrl, { transports: ['websocket', 'polling'] });
+
+  socket.on('connect', () => {
+    setStatus('live', 'Connected');
+    socket.emit('host:create', { sessionId });
+  });
+
+  socket.on('host:ready', () => {
+    document.getElementById('config-overlay').style.display = 'none';
+  });
+
+  socket.on('host:tracker_joined', (data) => {
+    addTracker(data);
+    showToast(`${data.name} joined`);
+  });
+
+  socket.on('host:location_update', (data) => {
+    updateTracker(data);
+  });
+
+  socket.on('host:tracker_left', ({ id }) => {
+    removeTracker(id);
+  });
+
+  socket.on('disconnect', () => {
+    setStatus('error', 'Disconnected');
+  });
+
+  socket.on('connect_error', (e) => {
+    setStatus('error', 'Connection error');
+    showToast('Cannot reach server. Check the URL.');
+  });
+}
+
+// ── Status ───────────────────────────────────────────────────────────────
+function setStatus(state, text) {
+  const dot = document.getElementById('status-dot');
+  dot.className = 'dot ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+// ── Tracker management ────────────────────────────────────────────────────
+function addTracker(data) {
+  const color = COLORS[colorIdx++ % COLORS.length];
+
+  // Create map marker
+  const iconHtml = `<div class="tracker-marker" style="background:${color}"><div class="tracker-marker-inner">${initials(data.name)}</div></div>`;
+  const icon = L.divIcon({ html: iconHtml, className: '', iconSize: [36,36], iconAnchor: [18,36] });
+
+  const lat = data.lat || 22.9;
+  const lng = data.lng || 78.6;
+  const marker = L.marker([lat, lng], { icon }).addTo(map);
+  marker.bindPopup(buildPopup(data));
+  marker.on('click', () => marker.openPopup());
+
+  // Create sidebar card
+  const card = document.createElement('div');
+  card.className = 'tracker-card';
+  card.id = 'card-' + data.id;
+  card.innerHTML = buildCardHTML(data, color);
+  card.querySelector('.center-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const t = trackers.get(data.id);
+    if (t && t.data.lat) map.setView([t.data.lat, t.data.lng], 16);
+  });
+  card.addEventListener('click', () => {
+    const t = trackers.get(data.id);
+    if (t && t.data.lat) {
+      map.setView([t.data.lat, t.data.lng], 16);
+      t.marker.openPopup();
+    }
+  });
+
+  // Hide empty state
+  document.getElementById('empty-state')?.remove();
+  document.getElementById('tracker-list-wrap').appendChild(card);
+
+  trackers.set(data.id, { data: { ...data, color }, marker, card });
+  updateCount();
+}
+
+function updateTracker(data) {
+  const t = trackers.get(data.id);
+  if (!t) return;
+  Object.assign(t.data, data);
+
+  // Move marker
+  if (data.lat && data.lng) {
+    t.marker.setLatLng([data.lat, data.lng]);
+    t.marker.setPopupContent(buildPopup(t.data));
+  }
+
+  // Update card
+  t.card.innerHTML = buildCardHTML(t.data, t.data.color);
+  t.card.querySelector('.center-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (t.data.lat) map.setView([t.data.lat, t.data.lng], 16);
+  });
+  t.card.addEventListener('click', () => {
+    if (t.data.lat) { map.setView([t.data.lat, t.data.lng], 16); t.marker.openPopup(); }
+  });
+}
+
+function removeTracker(id) {
+  const t = trackers.get(id);
+  if (!t) return;
+  t.card.classList.add('offline');
+  t.data.status = 'disconnected';
+  showToast(`${t.data.name} disconnected`);
+  updateCount();
+}
+
+// ── HTML builders ─────────────────────────────────────────────────────────
+function buildCardHTML(d, color) {
+  const bat = d.battery != null ? Math.round(d.battery * 100) : null;
+  const batClass = bat != null ? (bat < 20 ? 'danger' : bat < 40 ? 'warn' : '') : '';
+  const spd = d.speed != null ? (d.speed * 3.6).toFixed(0) + ' km/h' : '—';
+  const seen = d.lastSeen ? timeAgo(d.lastSeen) : '—';
+  const lat = d.lat ? d.lat.toFixed(5) : '—';
+  const lng = d.lng ? d.lng.toFixed(5) : '—';
+
+  return `
+    <div class="tracker-name">
+      <div class="tracker-status-dot" style="background:${d.status==='disconnected'?'#5a6478':color}"></div>
+      ${d.name}
+    </div>
+    <div class="tracker-meta">
+      <div class="meta-item">📍 <span class="val">${lat}, ${lng}</span></div>
+      <div class="meta-item">🚀 <span class="val">${spd}</span></div>
+      <div class="meta-item">🕐 <span class="val">${seen}</span></div>
+      <div class="meta-item">🔋
+        ${bat != null ? `
+          <div class="battery-bar"><div class="battery-fill ${batClass}" style="width:${bat}%"></div></div>
+          <span class="val ${batClass}">${bat}%${d.charging ? ' ⚡' : ''}</span>
+        ` : '<span class="val">—</span>'}
+      </div>
+    </div>
+    <button class="center-btn">→ Center on map</button>
+  `;
+}
+
+function buildPopup(d) {
+  const bat = d.battery != null ? Math.round(d.battery * 100) + '%' + (d.charging ? ' ⚡' : '') : '—';
+  const spd = d.speed != null ? (d.speed * 3.6).toFixed(0) + ' km/h' : '—';
+  return `
+    <div class="popup-name">${d.name}</div>
+    <div class="popup-row">Lat: <span>${d.lat ? d.lat.toFixed(6) : '—'}</span></div>
+    <div class="popup-row">Lng: <span>${d.lng ? d.lng.toFixed(6) : '—'}</span></div>
+    <div class="popup-row">Speed: <span>${spd}</span></div>
+    <div class="popup-row">Battery: <span>${bat}</span></div>
+    <div class="popup-row">Last seen: <span>${d.lastSeen ? timeAgo(d.lastSeen) : '—'}</span></div>
+  `;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 5) return 'just now';
+  if (s < 60) return s + 's ago';
+  return Math.floor(s/60) + 'm ago';
+}
+
+function updateCount() {
+  const active = [...trackers.values()].filter(t => t.data.status !== 'disconnected').length;
+  document.getElementById('tracker-count').textContent = active;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+initMap();
+
+// Refresh card times every 10s
+setInterval(() => {
+  trackers.forEach(t => {
+    if (t.data.status !== 'disconnected') updateTracker(t.data);
+  });
+}, 10000);
+</script>
+</body>
+</html>

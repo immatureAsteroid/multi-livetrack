@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>LiveTrack — Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #1f2530;
+    --accent: #00e5a0;
+    --accent2: #00b8ff;
+    --warn: #ff9f40;
+    --danger: #ff4d4d;
+    --text: #e8ecf2;
+    --muted: #5a6478;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--text); }
+  .tagline {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  /* ── NAME SCREEN ─── */
+  #name-screen {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .screen-title {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .screen-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+  .name-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 18px;
+    outline: none;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .name-input:focus { border-color: var(--accent2); }
+  .name-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── TRACKING SCREEN ─── */
+  #tracking-screen {
+    display: none;
+    width: 100%;
+    max-width: 340px;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-ring {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .status-ring.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 8px rgba(0,229,160,0.06), 0 0 0 16px rgba(0,229,160,0.03);
+    animation: ringpulse 2.5s ease-in-out infinite;
+  }
+  .status-ring.error { border-color: var(--danger); }
+  @keyframes ringpulse {
+    0%,100% { box-shadow: 0 0 0 8px rgba(0,229,160,0.06), 0 0 0 16px rgba(0,229,160,0.03); }
+    50% { box-shadow: 0 0 0 12px rgba(0,229,160,0.10), 0 0 0 22px rgba(0,229,160,0.05); }
+  }
+  .ring-icon { font-size: 36px; }
+  .ring-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .tracker-name-display {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .status-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .status-badge.active { color: var(--accent); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.06); }
+  .status-badge.waiting { color: var(--muted); border-color: var(--border); }
+  .status-badge.error { color: var(--danger); border-color: rgba(255,77,77,0.3); }
+  .status-badge.ended { color: var(--warn); border-color: rgba(255,159,64,0.3); }
+
+  /* Data cards */
+  .data-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .data-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .data-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .data-val {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .data-val.accent { color: var(--accent); }
+  .data-val.warn { color: var(--warn); }
+  .data-val.danger { color: var(--danger); }
+
+  .info-note {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+  .info-note a { color: var(--accent2); text-decoration: none; }
+
+  .stop-btn {
+    width: 100%;
+    background: none;
+    border: 1px solid rgba(255,77,77,0.3);
+    color: var(--danger);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 10px;
+    padding: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .stop-btn:hover { background: rgba(255,77,77,0.06); }
+
+  /* Error screen */
+  #error-screen {
+    display: none;
+    width: 100%;
+    max-width: 340px;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+  .error-icon { font-size: 40px; }
+  .error-title { font-size: 17px; font-weight: 700; color: var(--danger); }
+  .error-msg { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="logo">Live<span>Track</span></div>
+<div class="tagline" id="session-label">Loading session…</div>
+
+<!-- Name screen -->
+<div id="name-screen">
+  <div class="screen-title">What's your name?</div>
+  <div class="screen-sub">Your name and location will be shared<br>with the session organiser only.</div>
+  <input class="name-input" id="name-input" type="text" placeholder="e.g. Ravi Kumar" maxlength="40" autocomplete="name"/>
+  <button class="btn-primary" id="start-btn" onclick="startTracking()">Start sharing location →</button>
+</div>
+
+<!-- Tracking screen -->
+<div id="tracking-screen">
+  <div class="status-ring" id="status-ring">
+    <div class="ring-icon">📡</div>
+    <div class="ring-sub" id="ring-sub">connecting…</div>
+  </div>
+  <div class="tracker-name-display" id="name-display">—</div>
+  <div class="status-badge waiting" id="status-badge">Connecting…</div>
+  <div class="data-grid">
+    <div class="data-card">
+      <div class="data-label">Latitude</div>
+      <div class="data-val" id="val-lat">—</div>
+    </div>
+    <div class="data-card">
+      <div class="data-label">Longitude</div>
+      <div class="data-val" id="val-lng">—</div>
+    </div>
+    <div class="data-card">
+      <div class="data-label">Speed</div>
+      <div class="data-val accent" id="val-speed">—</div>
+    </div>
+    <div class="data-card">
+      <div class="data-label">Battery</div>
+      <div class="data-val" id="val-battery">—</div>
+    </div>
+  </div>
+  <div class="info-note">Keep this page open while moving.<br>Closing it stops sharing your location.</div>
+  <button class="stop-btn" onclick="stopTracking()">Stop sharing</button>
+</div>
+
+<!-- Error screen -->
+<div id="error-screen">
+  <div class="error-icon">⚠️</div>
+  <div class="error-title" id="error-title">Something went wrong</div>
+  <div class="error-msg" id="error-msg">Please try scanning the QR code again.</div>
+</div>
+
+<script>
+// ── Parse URL params ──────────────────────────────────────────────────────
+const params = new URLSearchParams(window.location.search);
+const SERVER_URL = params.get('server') || '';
+const SESSION_ID = params.get('session') || '';
+
+if (!SERVER_URL || !SESSION_ID) {
+  showError('Invalid QR code', 'This link is missing required parameters. Please scan the QR code again.');
+}
+
+document.getElementById('session-label').textContent = 'Session: ' + (SESSION_ID || '—');
+
+// ── Name persistence ──────────────────────────────────────────────────────
+const savedName = localStorage.getItem('livetrack_name');
+if (savedName) {
+  document.getElementById('name-input').value = savedName;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+let socket = null;
+let watchId = null;
+let myName = '';
+let isTracking = false;
+let lastBattery = null;
+let updateCount = 0;
+
+// ── Start tracking ────────────────────────────────────────────────────────
+function startTracking() {
+  const nameInput = document.getElementById('name-input');
+  myName = nameInput.value.trim();
+  if (!myName) { nameInput.focus(); return; }
+
+  localStorage.setItem('livetrack_name', myName);
+
+  document.getElementById('name-screen').style.display = 'none';
+  document.getElementById('tracking-screen').style.display = 'flex';
+  document.getElementById('name-display').textContent = myName;
+
+  document.getElementById('start-btn').disabled = true;
+
+  connectAndTrack();
+}
+
+async function connectAndTrack() {
+  // 1. Get battery if available
+  if (navigator.getBattery) {
+    try {
+      const bat = await navigator.getBattery();
+      lastBattery = { level: bat.level, charging: bat.charging };
+      bat.addEventListener('levelchange', () => { lastBattery.level = bat.level; });
+      bat.addEventListener('chargingchange', () => { lastBattery.charging = bat.charging; });
+    } catch(e) {}
+  }
+
+  // 2. Connect socket
+  socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
+
+  socket.on('connect', () => {
+    setStatus('waiting', 'Joining session…', false);
+    socket.emit('tracker:join', { sessionId: SESSION_ID, name: myName });
+  });
+
+  socket.on('tracker:joined', () => {
+    setStatus('active', 'Live — sharing location', true);
+    isTracking = true;
+    startGPS();
+  });
+
+  socket.on('tracker:error', ({ message }) => {
+    showError('Cannot join', message);
+  });
+
+  socket.on('session:ended', ({ message }) => {
+    stopGPS();
+    isTracking = false;
+    setStatus('ended', 'Session ended by organiser', false);
+    document.getElementById('status-ring').classList.remove('active');
+    showEndedNote(message);
+  });
+
+  socket.on('disconnect', () => {
+    if (isTracking) {
+      setStatus('error', 'Connection lost — reconnecting…', false);
+    }
+  });
+
+  socket.on('reconnect', () => {
+    if (isTracking) {
+      setStatus('active', 'Reconnected', true);
+    }
+  });
+}
+
+// ── GPS ───────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    showError('GPS not available', 'Your browser does not support geolocation.');
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const { latitude, longitude, speed, heading } = pos.coords;
+      const bat = lastBattery;
+
+      updateCount++;
+      document.getElementById('val-lat').textContent = latitude.toFixed(5);
+      document.getElementById('val-lng').textContent = longitude.toFixed(5);
+
+      const kph = speed != null ? (speed * 3.6).toFixed(1) : null;
+      document.getElementById('val-speed').textContent = kph != null ? kph + ' km/h' : '—';
+
+      if (bat) {
+        const pct = Math.round(bat.level * 100);
+        const batEl = document.getElementById('val-battery');
+        batEl.textContent = pct + '%' + (bat.charging ? ' ⚡' : '');
+        batEl.className = 'data-val' + (pct < 20 ? ' danger' : pct < 40 ? ' warn' : ' accent');
+      }
+
+      document.getElementById('ring-sub').textContent = 'update #' + updateCount;
+
+      if (socket && socket.connected) {
+        socket.emit('tracker:location', {
+          lat: latitude,
+          lng: longitude,
+          speed: speed,
+          heading: heading,
+          battery: bat ? bat.level : null,
+          charging: bat ? bat.charging : false
+        });
+      }
+    },
+    (err) => {
+      if (err.code === 1) {
+        showError('Location denied', 'Please allow location access and reload the page.');
+      } else {
+        setStatus('error', 'GPS error — retrying…', false);
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+  );
+}
+
+function stopGPS() {
+  if (watchId != null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+}
+
+function stopTracking() {
+  stopGPS();
+  if (socket) socket.disconnect();
+  isTracking = false;
+  setStatus('ended', 'Stopped', false);
+  document.getElementById('status-ring').classList.remove('active');
+  document.getElementById('stop-btn-wrap')?.remove();
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────
+function setStatus(state, text, ringActive) {
+  const badge = document.getElementById('status-badge');
+  badge.textContent = text;
+  badge.className = 'status-badge ' + state;
+  const ring = document.getElementById('status-ring');
+  ring.className = 'status-ring' + (ringActive ? ' active' : state === 'error' ? ' error' : '');
+}
+
+function showError(title, msg) {
+  document.getElementById('name-screen').style.display = 'none';
+  document.getElementById('tracking-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'flex';
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-msg').textContent = msg;
+}
+
+function showEndedNote(msg) {
+  const note = document.createElement('div');
+  note.className = 'info-note';
+  note.style.color = '#ff9f40';
+  note.textContent = msg || 'Session has ended. You can close this page.';
+  document.getElementById('tracking-screen').appendChild(note);
+}
+
+// ── Keep screen alive (prevent phone sleep) ───────────────────────────────
+if ('wakeLock' in navigator) {
+  navigator.wakeLock.request('screen').catch(() => {});
+}
+</script>
+</body>
+</html>
