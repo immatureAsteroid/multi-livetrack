@@ -16,208 +16,140 @@
     --text:#e8ecf2; --muted:#5a6478;
     --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
   }
-  
-  /* Light Mode Colors */
   body.light-mode {
-    --bg: #f4f6f8; 
-    --surface: #ffffff; 
-    --surface2: #eef1f5; 
-    --border: #d1d6e0;
-    --text: #111318; 
-    --muted: #6b7280;
+    --bg:#f4f6f8; --surface:#ffffff; --surface2:#eef1f5;
+    --border:#d1d6e0; --text:#111318; --muted:#6b7280;
   }
-
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:var(--font-display); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; transition: background 0.3s, color 0.3s; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-display); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; transition:background .3s,color .3s; }
 
-  /* Theme Toggle Button */
-  #theme-toggle {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 1000;
-    transition: transform 0.2s;
-  }
-  #theme-toggle:hover { transform: scale(1.1); }
+  #theme-toggle { position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; cursor:pointer; z-index:1000; transition:transform .2s; }
+  #theme-toggle:hover { transform:scale(1.1); }
 
-  .logo { font-size:22px; font-weight:800; color:var(--accent); margin-bottom:4px; letter-spacing:-0.5px; }
+  .logo { font-size:22px; font-weight:800; color:var(--accent); margin-bottom:4px; letter-spacing:-.5px; }
   .logo span { color:var(--text); }
   .tagline { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:32px; }
 
-  /* Permission screen */
-  #perm-screen { width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  #perm-screen, #name-screen, #tracking-screen, #error-screen {
+    width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; gap:14px;
+  }
+  #name-screen, #tracking-screen, #error-screen { display:none; }
+
   .screen-title { font-size:18px; font-weight:700; text-align:center; line-height:1.3; }
   .screen-sub { font-family:var(--font-mono); font-size:11px; color:var(--muted); text-align:center; line-height:1.7; }
 
   .perm-list { width:100%; display:flex; flex-direction:column; gap:8px; }
-  .perm-item {
-    background:var(--surface); border:1px solid var(--border); border-radius:10px;
-    padding:12px 14px; display:flex; align-items:center; gap:12px;
-  }
+  .perm-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:flex; align-items:center; gap:12px; }
   .perm-icon { font-size:22px; flex-shrink:0; }
   .perm-text { flex:1; }
   .perm-name { font-size:13px; font-weight:600; margin-bottom:2px; }
   .perm-desc { font-family:var(--font-mono); font-size:10px; color:var(--muted); line-height:1.5; }
-  .perm-badge {
-    font-family:var(--font-mono); font-size:9px; padding:3px 8px; border-radius:10px;
-    border:1px solid var(--border); color:var(--muted); background:var(--bg); white-space:nowrap;
-  }
-  .perm-badge.granted { color:var(--accent); border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.06); }
-  .perm-badge.denied  { color:var(--danger); border-color:rgba(255,77,77,0.3); }
+  .perm-badge { font-family:var(--font-mono); font-size:9px; padding:3px 8px; border-radius:10px; border:1px solid var(--border); color:var(--muted); background:var(--bg); white-space:nowrap; }
+  .perm-badge.granted { color:var(--accent); border-color:rgba(0,229,160,.3); background:rgba(0,229,160,.06); }
+  .perm-badge.denied  { color:var(--danger); border-color:rgba(255,77,77,.3); }
 
-  /* Name screen */
-  #name-screen { width:100%; max-width:340px; display:none; flex-direction:column; align-items:center; gap:14px; }
-  .name-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--font-display); font-size:16px; font-weight:600; padding:14px 18px; outline:none; text-align:center; transition:border-color 0.2s; }
+  .name-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:var(--font-display); font-size:16px; font-weight:600; padding:14px 18px; outline:none; text-align:center; transition:border-color .2s; }
   .name-input:focus { border-color:var(--accent2); }
-  .name-input::placeholder { color:var(--muted); font-weight:400; }
-
-  .btn-primary { width:100%; background:var(--accent); color:#000; font-family:var(--font-display); font-weight:700; font-size:15px; border:none; border-radius:10px; padding:14px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; }
-  .btn-primary:hover { opacity:0.88; transform:translateY(-1px); }
-  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
-
-  /* Tracking screen */
-  #tracking-screen { display:none; width:100%; max-width:340px; flex-direction:column; align-items:center; gap:16px; }
+  .btn-primary { width:100%; background:var(--accent); color:#000; font-family:var(--font-display); font-weight:700; font-size:15px; border:none; border-radius:10px; padding:14px; cursor:pointer; transition:opacity .2s,transform .15s; }
+  .btn-primary:hover { opacity:.88; transform:translateY(-1px); }
 
   .status-ring { width:110px; height:110px; border-radius:50%; border:3px solid var(--border); display:flex; align-items:center; justify-content:center; position:relative; }
   .status-ring.active { border-color:var(--accent); animation:ringpulse 2.5s ease-in-out infinite; }
-  .status-ring.error { border-color:var(--danger); }
+  .status-ring.error  { border-color:var(--danger); }
   @keyframes ringpulse {
-    0%,100% { box-shadow:0 0 0 8px rgba(0,229,160,0.06),0 0 0 16px rgba(0,229,160,0.03); }
-    50% { box-shadow:0 0 0 12px rgba(0,229,160,0.10),0 0 0 22px rgba(0,229,160,0.05); }
+    0%,100% { box-shadow:0 0 0 8px rgba(0,229,160,.06),0 0 0 16px rgba(0,229,160,.03); }
+    50%      { box-shadow:0 0 0 12px rgba(0,229,160,.10),0 0 0 22px rgba(0,229,160,.05); }
   }
   .ring-icon { font-size:36px; }
-  .ring-sub { font-family:var(--font-mono); font-size:10px; color:var(--muted); position:absolute; bottom:12px; left:50%; transform:translateX(-50%); white-space:nowrap; }
+  .ring-sub  { font-family:var(--font-mono); font-size:10px; color:var(--muted); position:absolute; bottom:12px; left:50%; transform:translateX(-50%); white-space:nowrap; }
 
   .tracker-name-display { font-size:20px; font-weight:700; }
   .status-badge { font-family:var(--font-mono); font-size:11px; padding:4px 14px; border-radius:20px; border:1px solid; }
-  .status-badge.active { color:var(--accent); border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.06); }
+  .status-badge.active  { color:var(--accent); border-color:rgba(0,229,160,.3); background:rgba(0,229,160,.06); }
   .status-badge.waiting { color:var(--muted); border-color:var(--border); }
-  .status-badge.error   { color:var(--danger); border-color:rgba(255,77,77,0.3); }
-  .status-badge.ended   { color:var(--warn);   border-color:rgba(255,159,64,0.3); }
+  .status-badge.error   { color:var(--danger); border-color:rgba(255,77,77,.3); }
+  .status-badge.ended   { color:var(--warn);   border-color:rgba(255,159,64,.3); background:rgba(255,159,64,.06); }
 
-  .data-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
+  .data-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; margin-top:10px; }
   .data-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
   .data-label { font-family:var(--font-mono); font-size:9px; letter-spacing:1.2px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; }
   .data-val { font-family:var(--font-mono); font-size:15px; font-weight:500; color:var(--text); }
   .data-val.accent { color:var(--accent); }
-  .data-val.warn   { color:var(--warn); }
-  .data-val.danger { color:var(--danger); }
+  .data-val.small  { font-size:12px; color:var(--accent2); }
 
-  /* Media status — read-only, controlled by dashboard */
-  #media-status-panel {
-    width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px;
-    padding:12px 14px; display:flex; flex-direction:column; gap:10px;
-  }
+  #media-status-panel { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
   .media-status-title { font-family:var(--font-mono); font-size:9px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; }
   .media-status-row { display:flex; align-items:center; gap:10px; }
   .media-status-icon { font-size:18px; width:26px; text-align:center; flex-shrink:0; }
   .media-status-label { font-family:var(--font-mono); font-size:11px; color:var(--text); flex:1; }
-  .media-status-badge {
-    font-family:var(--font-mono); font-size:9px; padding:2px 8px; border-radius:10px;
-    border:1px solid var(--border); color:var(--muted);
-  }
-  .media-status-badge.on { color:var(--accent); border-color:rgba(0,229,160,0.3); background:rgba(0,229,160,0.07); }
+  .media-status-badge { font-family:var(--font-mono); font-size:9px; padding:2px 8px; border-radius:10px; border:1px solid var(--border); color:var(--muted); }
+  .media-status-badge.on { color:var(--accent); border-color:rgba(0,229,160,.3); background:rgba(0,229,160,.07); }
 
-  /* Camera preview (small) */
+  /* SPEAK FROM DASHBOARD indicator */
+  #speak-indicator { width:100%; padding:8px 14px; border-radius:10px; border:1px solid rgba(255,77,77,.35); background:rgba(255,77,77,.06); font-family:var(--font-mono); font-size:11px; color:var(--danger); display:none; align-items:center; gap:8px; }
+  #speak-indicator.show { display:flex; }
+  .speak-dot { width:7px; height:7px; border-radius:50%; background:var(--danger); animation:pulse 1s infinite; flex-shrink:0; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+
   #cam-preview-wrap { width:100%; border-radius:10px; overflow:hidden; background:#000; display:none; position:relative; aspect-ratio:4/3; }
   #cam-preview-wrap.visible { display:block; }
   #cam-preview { width:100%; height:100%; object-fit:cover; display:block; }
-  .cam-badge { position:absolute; top:6px; left:6px; font-family:var(--font-mono); font-size:9px; color:var(--accent); background:rgba(0,0,0,0.75); padding:2px 7px; border-radius:10px; }
+  .cam-badge { position:absolute; top:6px; left:6px; font-family:var(--font-mono); font-size:9px; color:var(--accent); background:rgba(0,0,0,.75); padding:2px 7px; border-radius:10px; }
 
-  /* Remote audio (hidden) */
-  #remote-audio { display:none; }
+  #raise-hand-btn { width:100%; padding:14px; border-radius:12px; border:2px solid var(--border); background:var(--surface); color:var(--text); font-family:var(--font-display); font-weight:700; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:border-color .2s,background .2s; }
+  #raise-hand-btn.raised { border-color:var(--warn); background:rgba(255,159,64,.08); color:var(--warn); animation:handpulse 1.5s infinite; }
+  @keyframes handpulse { 0%,100%{box-shadow:0 0 0 4px rgba(255,159,64,.1)} 50%{box-shadow:0 0 0 10px rgba(255,159,64,.05)} }
 
-  /* ── RAISE HAND BUTTON ── */
-  #raise-hand-btn {
-    width:100%;
-    padding:16px;
-    border-radius:12px;
-    border:2px solid var(--border);
-    background:var(--surface);
-    color:var(--text);
-    font-family:var(--font-display);
-    font-weight:700;
-    font-size:15px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    transition:border-color 0.2s, background 0.2s, transform 0.15s;
-  }
-  #raise-hand-btn:hover { border-color:var(--warn); transform:translateY(-1px); }
-  #raise-hand-btn.raised {
-    border-color:var(--warn);
-    background:rgba(255,159,64,0.08);
-    color:var(--warn);
-    animation:handpulse 1.5s ease-in-out infinite;
-  }
-  @keyframes handpulse {
-    0%,100% { box-shadow:0 0 0 4px rgba(255,159,64,0.1); }
-    50% { box-shadow:0 0 0 10px rgba(255,159,64,0.05); }
-  }
-  .hand-icon { font-size:22px; }
+  /* Session ended notice */
+  #ended-notice { width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,159,64,.35); background:rgba(255,159,64,.07); font-family:var(--font-mono); font-size:11px; color:var(--warn); text-align:center; line-height:1.7; display:none; }
 
-  .info-note { font-family:var(--font-mono); font-size:10px; color:var(--muted); text-align:center; line-height:1.7; }
-  .stop-btn { width:100%; background:none; border:1px solid rgba(255,77,77,0.3); color:var(--danger); font-family:var(--font-display); font-weight:600; font-size:13px; border-radius:10px; padding:11px; cursor:pointer; transition:background 0.2s; }
-  .stop-btn:hover { background:rgba(255,77,77,0.06); }
+  #pip-btn { width:100%; background:none; border:1px solid rgba(0,184,255,.35); color:var(--accent2); font-family:var(--font-display); font-weight:600; font-size:13px; border-radius:10px; padding:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background .2s; }
+  #pip-btn.active { border-color:rgba(0,229,160,.5); color:var(--accent); background:rgba(0,229,160,.06); }
+  .stop-btn { width:100%; background:none; border:1px solid rgba(255,77,77,.3); color:var(--danger); font-family:var(--font-display); font-weight:600; font-size:13px; border-radius:10px; padding:11px; cursor:pointer; transition:background .2s; }
+  .stop-btn:hover { background:rgba(255,77,77,.06); }
 
-  #error-screen { display:none; width:100%; max-width:340px; flex-direction:column; align-items:center; gap:12px; text-align:center; }
-  .error-icon { font-size:40px; }
-  .error-title { font-size:17px; font-weight:700; color:var(--danger); }
-  .error-msg { font-family:var(--font-mono); font-size:11px; color:var(--muted); line-height:1.6; }
+  #error-screen .screen-title { color:var(--danger); }
 </style>
 </head>
 <body>
 
 <button id="theme-toggle" onclick="toggleTheme()">☀️</button>
-
 <div class="logo">Live<span>Track</span></div>
 <div class="tagline" id="session-label">Loading session…</div>
 
+<!-- PERMISSION SCREEN -->
 <div id="perm-screen">
   <div class="screen-title">Allow permissions</div>
-  <div class="screen-sub">LiveTrack needs these permissions upfront.<br>Camera & mic are only activated by the organiser.</div>
+  <div class="screen-sub">GPS, Camera, and Mic are needed.<br>Camera & mic are only used when the organiser requests.</div>
   <div class="perm-list">
     <div class="perm-item">
       <div class="perm-icon">📍</div>
-      <div class="perm-text">
-        <div class="perm-name">Location</div>
-        <div class="perm-desc">Shares your live GPS position</div>
-      </div>
+      <div class="perm-text"><div class="perm-name">Location</div><div class="perm-desc">Live GPS for the map</div></div>
       <div class="perm-badge" id="perm-loc-badge">Pending</div>
     </div>
     <div class="perm-item">
       <div class="perm-icon">📷</div>
-      <div class="perm-text">
-        <div class="perm-name">Camera</div>
-        <div class="perm-desc">Only used when organiser requests</div>
-      </div>
+      <div class="perm-text"><div class="perm-name">Camera</div><div class="perm-desc">Organiser-controlled only</div></div>
       <div class="perm-badge" id="perm-cam-badge">Pending</div>
     </div>
     <div class="perm-item">
       <div class="perm-icon">🎙️</div>
-      <div class="perm-text">
-        <div class="perm-name">Microphone</div>
-        <div class="perm-desc">Only used when organiser requests</div>
-      </div>
+      <div class="perm-text"><div class="perm-name">Microphone</div><div class="perm-desc">Two-way audio when needed</div></div>
       <div class="perm-badge" id="perm-mic-badge">Pending</div>
     </div>
   </div>
-  <button class="btn-primary" id="perm-btn" onclick="requestPermissions()">Allow & Continue →</button>
+  <button class="btn-primary" id="perm-btn" onclick="requestPermissions()">Allow &amp; Continue →</button>
 </div>
 
+<!-- NAME SCREEN -->
 <div id="name-screen">
   <div class="screen-title">What's your name?</div>
   <div class="screen-sub">Shown to the session organiser only.</div>
   <input class="name-input" id="name-input" type="text" placeholder="e.g. Ravi Kumar" maxlength="40" autocomplete="name"/>
-  <button class="btn-primary" id="start-btn" onclick="startTracking()">Start sharing location →</button>
+  <button class="btn-primary" id="start-btn" onclick="startTracking()">Start sharing →</button>
 </div>
 
+<!-- TRACKING SCREEN -->
 <div id="tracking-screen">
   <div class="status-ring" id="status-ring">
     <div class="ring-icon">📡</div>
@@ -227,19 +159,23 @@
   <div class="status-badge waiting" id="status-badge">Connecting…</div>
 
   <div class="data-grid">
-    <div class="data-card"><div class="data-label">Latitude</div><div class="data-val" id="val-lat">—</div></div>
-    <div class="data-card"><div class="data-label">Longitude</div><div class="data-val" id="val-lng">—</div></div>
     <div class="data-card"><div class="data-label">Speed</div><div class="data-val accent" id="val-speed">—</div></div>
     <div class="data-card"><div class="data-label">Battery</div><div class="data-val" id="val-battery">—</div></div>
+    <div class="data-card" style="grid-column:span 2;">
+      <div class="data-label">Coordinates</div>
+      <div class="data-val small" id="val-coords">Waiting for GPS…</div>
+    </div>
   </div>
 
+  <!-- Camera preview (shown when organiser turns cam on) -->
   <div id="cam-preview-wrap">
     <video id="cam-preview" autoplay playsinline muted></video>
     <div class="cam-badge" id="cam-badge">📷 Rear</div>
   </div>
 
+  <!-- Media status panel (read-only — organiser controls) -->
   <div id="media-status-panel">
-    <div class="media-status-title">Media status (organiser controlled)</div>
+    <div class="media-status-title">Media — organiser controlled</div>
     <div class="media-status-row">
       <div class="media-status-icon">📷</div>
       <div class="media-status-label" id="cam-status-text">Camera — off</div>
@@ -252,465 +188,553 @@
     </div>
   </div>
 
-  <button id="raise-hand-btn" onclick="toggleRaiseHand()">
-    <span class="hand-icon">🙋</span>
-    <span id="raise-hand-label">Raise Hand — Need Help</span>
-  </button>
-
-  <div class="info-note">Camera & mic are controlled by the organiser.<br>Keep this page open while moving.</div>
-
-  <button id="pip-btn" onclick="enablePiP()" style="
-    width:100%; background:none;
-    border:1px solid rgba(0,184,255,0.35);
-    color:var(--accent2);
-    font-family:var(--font-display); font-weight:600; font-size:13px;
-    border-radius:10px; padding:12px; cursor:pointer;
-    display:none; align-items:center; justify-content:center; gap:8px;
-    transition:background 0.2s;
-  ">
-    <span style="font-size:16px">⧉</span> Enable Background Mode
-  </button>
-  <div id="pip-note" style="display:none; font-family:var(--font-mono); font-size:10px; color:var(--muted); text-align:center; line-height:1.6;">
-    Keeps tracking active when you switch apps.<br>A tiny floating window will appear.
+  <!-- Dashboard is speaking to you indicator -->
+  <div id="speak-indicator">
+    <div class="speak-dot"></div>
+    Organiser is speaking to you…
   </div>
 
+  <!-- Session ended notice (replaces reconnecting message) -->
+  <div id="ended-notice"></div>
+
+  <button id="raise-hand-btn" onclick="toggleRaiseHand()">
+    <span>🙋</span><span id="raise-hand-label">Raise Hand — Need Help</span>
+  </button>
+
+  <button id="pip-btn" onclick="enablePiP()"><span style="font-size:16px">⧉</span> Enable Background Mode</button>
   <button class="stop-btn" onclick="stopTracking()">Stop sharing</button>
 
-  <video id="pip-video" style="display:none;" autoplay muted loop playsinline></video>
-
-  <audio id="remote-audio" autoplay playsinline></audio>
+  <video id="pip-video" style="display:none;" autoplay playsinline></video>
+  <!-- Audio from dashboard (dashboard speaking to tracker) -->
+  <audio id="remote-audio" autoplay playsinline style="display:none;"></audio>
 </div>
 
+<!-- ERROR SCREEN -->
 <div id="error-screen">
-  <div class="error-icon">⚠️</div>
-  <div class="error-title" id="error-title">Something went wrong</div>
-  <div class="error-msg" id="error-msg">Please scan the QR code again.</div>
+  <div class="screen-title" id="error-title">Error</div>
+  <div class="screen-sub" id="error-msg">Please scan the QR code again.</div>
 </div>
 
 <script>
-// ── THEME TOGGLE ─────────────────────────────────────────────────────────
+// ── THEME ─────────────────────────────────────────────────────────────────
 function toggleTheme() {
   document.body.classList.toggle('light-mode');
-  const isLight = document.body.classList.contains('light-mode');
+  var isLight = document.body.classList.contains('light-mode');
   document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
-  localStorage.setItem('livetrack_theme', isLight ? 'light' : 'dark');
+  try { localStorage.setItem('livetrack_theme', isLight ? 'light' : 'dark'); } catch(e){}
 }
+try { if (localStorage.getItem('livetrack_theme') === 'light') toggleTheme(); } catch(e){}
 
-// Load saved theme on startup
-if (localStorage.getItem('livetrack_theme') === 'light') {
-  document.body.classList.add('light-mode');
-  document.getElementById('theme-toggle').textContent = '🌙';
+// ── URL PARAMS ────────────────────────────────────────────────────────────
+var params     = new URLSearchParams(window.location.search);
+var SERVER_URL = params.get('server');
+var SESSION_ID = params.get('session');
+
+if (!SERVER_URL || !SESSION_ID) {
+  document.getElementById('perm-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'flex';
+  document.getElementById('error-title').textContent = 'Invalid link';
+  document.getElementById('error-msg').textContent   = 'Please scan the QR code again.';
 }
-
-const params = new URLSearchParams(window.location.search);
-const SERVER_URL = params.get('server') || '';
-const SESSION_ID = params.get('session') || '';
-
-if (!SERVER_URL || !SESSION_ID) showError('Invalid QR code', 'Link is missing parameters.');
 document.getElementById('session-label').textContent = 'Session: ' + (SESSION_ID || '—');
 
-const savedName = localStorage.getItem('livetrack_name');
-if (savedName) document.getElementById('name-input').value = savedName;
+try { var sn = localStorage.getItem('livetrack_name'); if (sn) document.getElementById('name-input').value = sn; } catch(e){}
 
-// ── State ─────────────────────────────────────────────────────────────────
-let socket = null;
-let watchId = null;
-let myName = '';
-let isTracking = false;
-let lastBattery = null;
-let updateCount = 0;
-let handRaised = false;
+// ── STATE ─────────────────────────────────────────────────────────────────
+var socket, watchId, myName;
+var isTracking   = false;
+var sessionEnded = false;   // true = deliberate end (not a network drop)
+var lastBattery  = null;
+var updateCount  = 0;
+var handRaised   = false;
+var currentPos   = { lat: 0, lng: 0 };
+var bgGpsInterval;
 
-// Media streams
-let camStream = null;
-let micStream = null;
-let camFacing = 'environment';
-let camOn = false;
-let micOn = false;
+// Media
+var camStream = null, micStream = null;
+var camFacing = 'environment', camOn = false, micOn = false;
 
-// WebRTC — one peer connection to host
-let peerConn = null;
-let hostSocketId = null;
+// WebRTC — ONE peer connection to the dashboard
+var peerConn   = null;
+var hostSocketId = null;
+var iceServers = [
+  { urls:'stun:stun.l.google.com:19302' },
+  { urls:'stun:stun1.l.google.com:19302' },
+  { urls:'turn:openrelay.metered.ca:80',  username:'openrelayproject', credential:'openrelayproject' },
+  { urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' }
+];
 
-// Pre-acquired streams (from permission step — we get access but don't use yet)
-let permCamStream = null;
-let permMicStream = null;
-
-// ── STEP 1: Request all permissions upfront ───────────────────────────────
+// ── 1. PERMISSIONS (upfront, all at once) ────────────────────────────────
 async function requestPermissions() {
-  document.getElementById('perm-btn').disabled = true;
-  document.getElementById('perm-btn').textContent = 'Requesting…';
+  var btn = document.getElementById('perm-btn');
+  btn.disabled = true;
+  btn.textContent = 'Requesting…';
 
   // Location
   try {
-    await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 }));
-    setBadge('perm-loc-badge', 'Granted', true);
+    await new Promise(function(res,rej){ navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000}); });
+    document.getElementById('perm-loc-badge').className = 'perm-badge granted';
+    document.getElementById('perm-loc-badge').textContent = 'Granted';
   } catch(e) {
-    setBadge('perm-loc-badge', 'Denied', false);
+    document.getElementById('perm-loc-badge').className = 'perm-badge denied';
+    document.getElementById('perm-loc-badge').textContent = 'Denied';
   }
 
   // Camera
   try {
-    permCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    // Stop immediately — just needed the prompt
-    permCamStream.getTracks().forEach(t => t.stop());
-    permCamStream = null;
-    setBadge('perm-cam-badge', 'Granted', true);
+    var cs = await navigator.mediaDevices.getUserMedia({video:true, audio:false});
+    cs.getTracks().forEach(function(t){t.stop();});
+    document.getElementById('perm-cam-badge').className = 'perm-badge granted';
+    document.getElementById('perm-cam-badge').textContent = 'Granted';
   } catch(e) {
-    setBadge('perm-cam-badge', 'Denied', false);
+    document.getElementById('perm-cam-badge').className = 'perm-badge denied';
+    document.getElementById('perm-cam-badge').textContent = 'Denied';
   }
 
   // Microphone
   try {
-    permMicStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    permMicStream.getTracks().forEach(t => t.stop());
-    permMicStream = null;
-    setBadge('perm-mic-badge', 'Granted', true);
+    var ms = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+    ms.getTracks().forEach(function(t){t.stop();});
+    document.getElementById('perm-mic-badge').className = 'perm-badge granted';
+    document.getElementById('perm-mic-badge').textContent = 'Granted';
   } catch(e) {
-    setBadge('perm-mic-badge', 'Denied', false);
+    document.getElementById('perm-mic-badge').className = 'perm-badge denied';
+    document.getElementById('perm-mic-badge').textContent = 'Denied';
   }
 
-  // Move to name screen after short delay
-  setTimeout(() => {
+  setTimeout(function() {
     document.getElementById('perm-screen').style.display = 'none';
     document.getElementById('name-screen').style.display = 'flex';
-  }, 800);
+  }, 700);
 }
 
-function setBadge(id, text, granted) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className = 'perm-badge ' + (granted ? 'granted' : 'denied');
-}
-
-// ── STEP 2: Enter name and start ──────────────────────────────────────────
+// ── 2. START TRACKING ─────────────────────────────────────────────────────
 function startTracking() {
-  const nameInput = document.getElementById('name-input');
-  myName = nameInput.value.trim();
-  if (!myName) { nameInput.focus(); return; }
-  localStorage.setItem('livetrack_name', myName);
-  document.getElementById('name-screen').style.display = 'none';
-  document.getElementById('tracking-screen').style.display = 'flex';
-  document.getElementById('name-display').textContent = myName;
-  connectAndTrack();
-}
+  myName = document.getElementById('name-input').value.trim();
+  if (!myName) { document.getElementById('name-input').focus(); return; }
+  try { localStorage.setItem('livetrack_name', myName); } catch(e){}
 
-async function connectAndTrack() {
+  document.getElementById('name-screen').style.display    = 'none';
+  document.getElementById('tracking-screen').style.display = 'flex';
+  document.getElementById('name-display').textContent     = myName;
+
   // Battery
   if (navigator.getBattery) {
-    try {
-      const bat = await navigator.getBattery();
-      lastBattery = { level: bat.level, charging: bat.charging };
-      bat.addEventListener('levelchange', () => { lastBattery.level = bat.level; });
-      bat.addEventListener('chargingchange', () => { lastBattery.charging = bat.charging; });
-    } catch(e) {}
+    navigator.getBattery().then(function(b) {
+      lastBattery = b;
+      b.addEventListener('levelchange', function(){ lastBattery = b; });
+      b.addEventListener('chargingchange', function(){ lastBattery = b; });
+    });
   }
 
-  socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
+  socket = io(SERVER_URL, {transports:['websocket','polling']});
 
-  socket.on('connect', () => {
-    setStatus('waiting', 'Joining session…', false);
-    socket.emit('tracker:join', { sessionId: SESSION_ID, name: myName });
+  socket.on('connect', function() {
+    setStatus('waiting','Joining session…');
+    socket.emit('tracker:join', {sessionId:SESSION_ID, name:myName});
   });
 
-  socket.on('tracker:joined', () => {
-    setStatus('active', 'Live — sharing location', true);
+  socket.on('tracker:joined', function() {
+    setStatus('active','Live — sharing location', true);
     isTracking = true;
     startGPS();
     emitMediaState();
   });
 
-  socket.on('tracker:error', ({ message }) => showError('Cannot join', message));
-
-  socket.on('session:ended', () => {
-    stopAllMedia();
-    stopGPS();
-    isTracking = false;
-    setStatus('ended', 'Session ended', false);
-    document.getElementById('status-ring').classList.remove('active');
+  socket.on('tracker:error', function(d) {
+    showError('Cannot join', d.message || 'Session not found.');
   });
 
-  // ── Dashboard media commands ──────────────────────────────────────────
-  socket.on('tracker:media_cmd', async ({ cmd }) => {
-    switch(cmd) {
-      case 'cam_on':   await startCamera(); break;
-      case 'cam_off':  stopCamera(); break;
-      case 'cam_flip': await flipCamera(); break;
-      case 'mic_on':   await startMic(); break;
-      case 'mic_off':  stopMic(); break;
-    }
+  // ── Media commands from dashboard ──────────────────────────────────────
+  socket.on('tracker:media_cmd', async function(d) {
+    var cmd = d.cmd;
+    if (cmd === 'cam_on')  await startCamera();
+    if (cmd === 'cam_off') stopCamera();
+    if (cmd === 'cam_flip') await flipCamera();
+    if (cmd === 'mic_on')  await startMic();
+    if (cmd === 'mic_off') stopMic();
     emitMediaState();
   });
 
-  // ── WebRTC from host ──────────────────────────────────────────────────
-  socket.on('webrtc:offer', async ({ fromId, offer }) => {
-    hostSocketId = fromId;
-    await setupPeerConnection(fromId);
-    await peerConn.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConn.createAnswer();
-    await peerConn.setLocalDescription(answer);
-    socket.emit('webrtc:answer', { targetId: fromId, answer });
+  // ── Kicked by dashboard ────────────────────────────────────────────────
+  socket.on('tracker:kicked', function() {
+    sessionEnded = true;
+    isTracking   = false;
+    stopAllMedia();
+    stopGPS();
+    setStatus('ended','Removed by organiser', false);
+    showEndedNotice('You have been removed from this session by the organiser.');
   });
 
-  socket.on('webrtc:ice', async ({ candidate }) => {
-    if (peerConn && candidate) {
-      try { await peerConn.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+  // ── Session ended (host closed tab/browser) ────────────────────────────
+  socket.on('session:ended', function(d) {
+    sessionEnded = true;
+    isTracking   = false;
+    stopAllMedia();
+    stopGPS();
+    if (peerConn) { try{peerConn.close();}catch(e){} peerConn = null; }
+    setStatus('ended','Session ended', false);
+    showEndedNotice(d && d.message ? d.message : 'The organiser has closed this session. You can close this page.');
+  });
+
+  // ── Network disconnection (NOT a session end) ──────────────────────────
+  socket.on('disconnect', function() {
+    if (sessionEnded) return;   // already handled above
+    if (isTracking) setStatus('error','Connection lost — reconnecting…', false);
+  });
+
+  socket.on('reconnect', function() {
+    if (sessionEnded) return;
+    if (isTracking) {
+      setStatus('active','Reconnected', true);
+      emitMediaState();
     }
   });
 
-  socket.on('disconnect', () => { if (isTracking) setStatus('error', 'Reconnecting…', false); });
-  socket.on('reconnect', () => { if (isTracking) { setStatus('active', 'Reconnected', true); emitMediaState(); } });
+  // ── WebRTC signaling ───────────────────────────────────────────────────
+  // Dashboard sends offer → tracker answers WITH streams already attached.
+  // This is the KEY FIX for the 60-90s delay: we add cam/mic tracks
+  // BEFORE calling createAnswer(), so they're in the initial SDP.
+  // No onnegotiationneeded renegotiation = streams arrive in 2-4 seconds.
+  socket.on('webrtc:offer', async function(d) {
+    hostSocketId = d.fromId;
+    await buildPeer(d.fromId);
+
+    try {
+      await peerConn.setRemoteDescription(new RTCSessionDescription(d.offer));
+
+      // Add any already-open streams BEFORE answering
+      if (camStream) {
+        camStream.getVideoTracks().forEach(function(t){
+          if (!senderExists('video')) peerConn.addTrack(t, camStream);
+        });
+      }
+      if (micStream) {
+        micStream.getAudioTracks().forEach(function(t){
+          if (!senderExists('audio')) peerConn.addTrack(t, micStream);
+        });
+      }
+
+      var answer = await peerConn.createAnswer();
+      await peerConn.setLocalDescription(answer);
+      socket.emit('webrtc:answer', {targetId:d.fromId, answer:answer});
+    } catch(e) { console.warn('webrtc:offer handling error', e); }
+  });
+
+  socket.on('webrtc:answer', async function(d) {
+    if (!peerConn || peerConn.signalingState !== 'have-local-offer') return;
+    try { await peerConn.setRemoteDescription(new RTCSessionDescription(d.answer)); } catch(e){}
+  });
+
+  socket.on('webrtc:ice', async function(d) {
+    if (peerConn && d.candidate) {
+      try { await peerConn.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch(e){}
+    }
+  });
 }
 
-// ── GPS ───────────────────────────────────────────────────────────────────
-function startGPS() {
-  if (!navigator.geolocation) { showError('GPS unavailable', 'Browser does not support geolocation.'); return; }
-  watchId = navigator.geolocation.watchPosition(pos => {
-    const { latitude, longitude, speed, heading } = pos.coords;
-    updateCount++;
-    document.getElementById('val-lat').textContent = latitude.toFixed(5);
-    document.getElementById('val-lng').textContent = longitude.toFixed(5);
-    document.getElementById('val-speed').textContent = speed != null ? (speed*3.6).toFixed(1)+' km/h' : '—';
-    document.getElementById('ring-sub').textContent = 'update #' + updateCount;
-    if (lastBattery) {
-      const pct = Math.round(lastBattery.level * 100);
-      const el = document.getElementById('val-battery');
-      el.textContent = pct + '%' + (lastBattery.charging ? ' ⚡' : '');
-      el.className = 'data-val' + (pct < 20 ? ' danger' : pct < 40 ? ' warn' : ' accent');
+// ── 3. WEBRTC PEER CONSTRUCTION ──────────────────────────────────────────
+function buildPeer(remoteId) {
+  if (peerConn) { try{peerConn.close();}catch(e){} peerConn = null; }
+
+  peerConn = new RTCPeerConnection({iceServers:iceServers, iceCandidatePoolSize:10});
+
+  peerConn.onicecandidate = function(ev) {
+    if (ev.candidate && socket && socket.connected) {
+      socket.emit('webrtc:ice', {targetId:remoteId, candidate:ev.candidate});
     }
-    if (socket?.connected) {
-      socket.emit('tracker:location', {
-        lat: latitude, lng: longitude, speed, heading,
-        battery: lastBattery?.level ?? null, charging: lastBattery?.charging ?? false
+  };
+
+  peerConn.onconnectionstatechange = function() {
+    if (peerConn.connectionState === 'failed') {
+      try { peerConn.restartIce(); } catch(e){}
+    }
+  };
+
+  // INCOMING: dashboard audio (when dashboard presses Speak)
+  peerConn.ontrack = function(ev) {
+    var track = ev.track;
+    if (track.kind === 'audio') {
+      var au = document.getElementById('remote-audio');
+      if (!(au.srcObject instanceof MediaStream)) au.srcObject = new MediaStream();
+      au.srcObject.getAudioTracks().forEach(function(old){ au.srcObject.removeTrack(old); });
+      au.srcObject.addTrack(track);
+      au.volume = 1.0;
+      au.play().catch(function(){});
+      // Show "organiser is speaking" indicator
+      document.getElementById('speak-indicator').classList.add('show');
+      track.onended = function() {
+        document.getElementById('speak-indicator').classList.remove('show');
+      };
+    }
+  };
+
+  return Promise.resolve(); // buildPeer is sync but used with await above
+}
+
+function senderExists(kind) {
+  if (!peerConn) return false;
+  return peerConn.getSenders().some(function(s){ return s.track && s.track.kind === kind; });
+}
+
+// ── 4. CAMERA & MIC ──────────────────────────────────────────────────────
+async function startCamera() {
+  stopCamera();
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:camFacing, width:{ideal:640}, height:{ideal:480}},
+      audio:false
+    });
+    document.getElementById('cam-preview').srcObject = camStream;
+    document.getElementById('cam-preview-wrap').classList.add('visible');
+    document.getElementById('cam-badge').textContent = camFacing === 'environment' ? '📷 Rear' : '🤳 Front';
+    camOn = true;
+    updateMediaUI();
+
+    // Add video track to existing peer connection (replaceTrack if sender exists)
+    if (peerConn) {
+      var vSender = peerConn.getSenders().find(function(s){ return s.track && s.track.kind==='video'; });
+      camStream.getVideoTracks().forEach(function(t) {
+        if (vSender) vSender.replaceTrack(t);
+        else peerConn.addTrack(t, camStream);
       });
     }
-  }, err => {
-    if (err.code === 1) showError('Location denied', 'Allow location and reload.');
-    else setStatus('error', 'GPS error…', false);
-  }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 });
+  } catch(e) {
+    camOn = false;
+    updateMediaUI();
+    console.warn('startCamera error:', e);
+  }
+}
+
+function stopCamera() {
+  if (camStream) { camStream.getTracks().forEach(function(t){t.stop();}); camStream = null; }
+  document.getElementById('cam-preview-wrap').classList.remove('visible');
+  document.getElementById('cam-preview').srcObject = null;
+  camOn = false;
+  updateMediaUI();
+}
+
+async function flipCamera() {
+  camFacing = (camFacing === 'environment') ? 'user' : 'environment';
+  if (camOn) await startCamera();
+}
+
+async function startMic() {
+  stopMic();
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true, noiseSuppression:true},
+      video:false
+    });
+    micOn = true;
+    updateMediaUI();
+
+    // Add audio track to existing peer (replaceTrack if sender exists)
+    if (peerConn) {
+      var aSender = peerConn.getSenders().find(function(s){ return s.track && s.track.kind==='audio'; });
+      micStream.getAudioTracks().forEach(function(t) {
+        if (aSender) aSender.replaceTrack(t);
+        else peerConn.addTrack(t, micStream);
+      });
+    } else if (hostSocketId) {
+      // No peer yet — initiate
+      await buildPeer(hostSocketId);
+      micStream.getAudioTracks().forEach(function(t){ peerConn.addTrack(t, micStream); });
+      var offer = await peerConn.createOffer();
+      await peerConn.setLocalDescription(offer);
+      socket.emit('webrtc:offer', {targetId:hostSocketId, offer:offer});
+    }
+  } catch(e) {
+    micOn = false;
+    updateMediaUI();
+  }
+}
+
+function stopMic() {
+  if (micStream) { micStream.getTracks().forEach(function(t){t.stop();}); micStream = null; }
+  micOn = false;
+  updateMediaUI();
+}
+
+function stopAllMedia() {
+  stopCamera();
+  stopMic();
+}
+
+function emitMediaState() {
+  if (socket && socket.connected) {
+    socket.emit('tracker:media_state', {camOn:camOn, camFacing:camFacing, micOn:micOn});
+  }
+}
+
+function updateMediaUI() {
+  var cb = document.getElementById('cam-status-badge');
+  var mb = document.getElementById('mic-status-badge');
+  cb.textContent = camOn ? 'ON' : 'OFF';
+  cb.className   = 'media-status-badge' + (camOn ? ' on' : '');
+  mb.textContent = micOn ? 'ON' : 'OFF';
+  mb.className   = 'media-status-badge' + (micOn ? ' on' : '');
+  document.getElementById('cam-status-text').textContent = camOn ? ('Camera — ' + (camFacing==='environment'?'Rear':'Front')) : 'Camera — off';
+  document.getElementById('mic-status-text').textContent = micOn ? 'Microphone — active' : 'Microphone — off';
+}
+
+// ── 5. GPS ────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) return;
+  watchId = navigator.geolocation.watchPosition(function(pos) {
+    updateCount++;
+    currentPos.lat = pos.coords.latitude.toFixed(6);
+    currentPos.lng = pos.coords.longitude.toFixed(6);
+
+    document.getElementById('ring-sub').textContent  = 'update #' + updateCount;
+    document.getElementById('val-speed').textContent = pos.coords.speed != null ? (pos.coords.speed*3.6).toFixed(1)+' km/h' : '0.0 km/h';
+    document.getElementById('val-coords').textContent = currentPos.lat + ', ' + currentPos.lng;
+
+    if (lastBattery) {
+      var pct = Math.round(lastBattery.level * 100);
+      document.getElementById('val-battery').textContent = pct + '%' + (lastBattery.charging ? ' ⚡' : '');
+    }
+
+    if (socket && socket.connected) {
+      socket.emit('tracker:location', {
+        lat:     pos.coords.latitude,
+        lng:     pos.coords.longitude,
+        speed:   pos.coords.speed,
+        battery: lastBattery ? lastBattery.level : null,
+        charging:lastBattery ? lastBattery.charging : false
+      });
+    }
+  }, function(err) {
+    if (err.code === 1) showError('Location denied', 'Please allow location access and reload.');
+  }, {enableHighAccuracy:true, maximumAge:3000, timeout:10000});
 }
 
 function stopGPS() {
   if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
 }
 
-// ── CAMERA ────────────────────────────────────────────────────────────────
-async function startCamera() {
-  stopCamera();
-  try {
-    camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: camFacing, width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: false
-    });
-    document.getElementById('cam-preview').srcObject = camStream;
-    document.getElementById('cam-preview-wrap').classList.add('visible');
-    document.getElementById('cam-badge').textContent = camFacing === 'environment' ? '📷 Rear' : '🤳 Front';
-    camOn = true;
-    updateMediaStatusUI();
-    // Add video track to WebRTC if connected
-    if (peerConn) {
-      camStream.getVideoTracks().forEach(t => peerConn.addTrack(t, camStream));
-    }
-  } catch(e) {
-    camOn = false;
-    updateMediaStatusUI();
-  }
+// ── 6. UI HELPERS ─────────────────────────────────────────────────────────
+function setStatus(state, text, active) {
+  var badge = document.getElementById('status-badge');
+  var ring  = document.getElementById('status-ring');
+  badge.textContent = text;
+  badge.className   = 'status-badge ' + state;
+  ring.className    = 'status-ring' + (active ? ' active' : (state==='error' ? ' error' : ''));
 }
 
-function stopCamera() {
-  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-  document.getElementById('cam-preview-wrap').classList.remove('visible');
-  document.getElementById('cam-preview').srcObject = null;
-  camOn = false;
-  updateMediaStatusUI();
-}
-
-async function flipCamera() {
-  camFacing = camFacing === 'environment' ? 'user' : 'environment';
-  if (camOn) await startCamera();
-}
-
-// ── MIC ───────────────────────────────────────────────────────────────────
-async function startMic() {
-  stopMic();
-  try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    micOn = true;
-    updateMediaStatusUI();
-    // Add audio track to WebRTC peer connection
-    if (peerConn) {
-      micStream.getAudioTracks().forEach(t => peerConn.addTrack(t, micStream));
-    } else {
-      // Create peer connection proactively when mic turns on
-      if (hostSocketId) await initiatePeerConnection(hostSocketId);
-    }
-  } catch(e) {
-    micOn = false;
-    updateMediaStatusUI();
-  }
-}
-
-function stopMic() {
-  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
-  micOn = false;
-  updateMediaStatusUI();
-}
-
-function stopAllMedia() {
-  stopCamera();
-  stopMic();
-  if (peerConn) { peerConn.close(); peerConn = null; }
-}
-
-function emitMediaState() {
-  if (socket?.connected) socket.emit('tracker:media_state', { camOn, camFacing, micOn });
-}
-
-function updateMediaStatusUI() {
-  document.getElementById('cam-status-text').textContent = camOn ? ('Camera — ' + (camFacing === 'environment' ? 'Rear' : 'Front')) : 'Camera — off';
-  document.getElementById('cam-status-badge').textContent = camOn ? 'ON' : 'OFF';
-  document.getElementById('cam-status-badge').className = 'media-status-badge' + (camOn ? ' on' : '');
-  document.getElementById('mic-status-text').textContent = micOn ? 'Microphone — active' : 'Microphone — off';
-  document.getElementById('mic-status-badge').textContent = micOn ? 'ON' : 'OFF';
-  document.getElementById('mic-status-badge').className = 'media-status-badge' + (micOn ? ' on' : '');
-}
-
-// ── WebRTC ────────────────────────────────────────────────────────────────
-async function setupPeerConnection(remoteId) {
-  if (peerConn) peerConn.close();
-  peerConn = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] });
-
-  peerConn.onicecandidate = ({ candidate }) => {
-    if (candidate) socket.emit('webrtc:ice', { targetId: remoteId, candidate });
-  };
-
-  // Incoming audio from dashboard (host speaking to tracker)
-  peerConn.ontrack = ({ streams }) => {
-    const audio = document.getElementById('remote-audio');
-    if (streams[0]) audio.srcObject = streams[0];
-  };
-
-  // Add any existing streams
-  if (camStream) camStream.getVideoTracks().forEach(t => peerConn.addTrack(t, camStream));
-  if (micStream) micStream.getAudioTracks().forEach(t => peerConn.addTrack(t, micStream));
-}
-
-async function initiatePeerConnection(remoteId) {
-  await setupPeerConnection(remoteId);
-  const offer = await peerConn.createOffer();
-  await peerConn.setLocalDescription(offer);
-  socket.emit('webrtc:offer', { targetId: remoteId, offer });
-}
-
-// ── Raise hand ────────────────────────────────────────────────────────────
-function toggleRaiseHand() {
-  handRaised = !handRaised;
-  const btn = document.getElementById('raise-hand-btn');
-  const lbl = document.getElementById('raise-hand-label');
-  btn.classList.toggle('raised', handRaised);
-  lbl.textContent = handRaised ? 'Hand Raised — Organiser Notified' : 'Raise Hand — Need Help';
-  if (socket?.connected) socket.emit('tracker:raise_hand', { raised: handRaised });
-}
-
-// ── Stop all ──────────────────────────────────────────────────────────────
-function stopTracking() {
-  stopGPS(); stopAllMedia();
-  if (socket) socket.disconnect();
-  isTracking = false;
-  setStatus('ended', 'Stopped', false);
-  document.getElementById('status-ring').classList.remove('active');
-}
-
-// ── UI helpers ────────────────────────────────────────────────────────────
-function setStatus(state, text, ringActive) {
-  document.getElementById('status-badge').textContent = text;
-  document.getElementById('status-badge').className = 'status-badge ' + state;
-  document.getElementById('status-ring').className = 'status-ring' + (ringActive ? ' active' : state === 'error' ? ' error' : '');
+function showEndedNotice(msg) {
+  var el = document.getElementById('ended-notice');
+  el.textContent  = msg;
+  el.style.display = 'block';
 }
 
 function showError(title, msg) {
-  ['perm-screen','name-screen','tracking-screen'].forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('error-screen').style.display = 'flex';
+  document.getElementById('perm-screen').style.display     = 'none';
+  document.getElementById('name-screen').style.display     = 'none';
+  document.getElementById('tracking-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display    = 'flex';
   document.getElementById('error-title').textContent = title;
-  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('error-msg').textContent   = msg;
 }
 
-if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
+function toggleRaiseHand() {
+  handRaised = !handRaised;
+  var btn = document.getElementById('raise-hand-btn');
+  var lbl = document.getElementById('raise-hand-label');
+  btn.classList.toggle('raised', handRaised);
+  lbl.textContent = handRaised ? 'Hand Raised — Organiser Notified' : 'Raise Hand — Need Help';
+  if (socket && socket.connected) socket.emit('tracker:raise_hand', {raised:handRaised});
+}
 
-// ── Picture-in-Picture background mode ───────────────────────────────────
-// Force show the button (Mobile OS sometimes hides the API status)
-const pipBtn = document.getElementById('pip-btn');
-const pipNote = document.getElementById('pip-note');
-pipBtn.style.display = 'flex';
-pipNote.style.display = 'block';
+function stopTracking() {
+  stopGPS();
+  stopAllMedia();
+  if (peerConn) { try{peerConn.close();}catch(e){} peerConn = null; }
+  if (socket)   socket.disconnect();
+  isTracking = false;
+  setStatus('ended','Stopped', false);
+}
 
-let pipActive = false;
+// ── 7. WAKE LOCK ──────────────────────────────────────────────────────────
+if ('wakeLock' in navigator) {
+  navigator.wakeLock.request('screen').catch(function(){});
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible' && isTracking) {
+      navigator.wakeLock.request('screen').catch(function(){});
+    }
+  });
+}
+
+// ── 8. BACKGROUND PiP ────────────────────────────────────────────────────
+var pipActive = false;
+var bgGpsId   = null;
 
 async function enablePiP() {
+  var btn = document.getElementById('pip-btn');
   try {
     if (pipActive) {
       await document.exitPictureInPicture();
-      pipActive = false;
-      pipBtn.innerHTML = '<span style="font-size:16px">⧉</span> Enable Background Mode';
-      pipBtn.style.borderColor = 'rgba(0,184,255,0.35)';
-      pipBtn.style.color = 'var(--accent2)';
       return;
     }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = 320;
-    canvas.height = 100;
-    const ctx = canvas.getContext('2d');
+    var canvas = document.createElement('canvas');
+    canvas.width = 320; canvas.height = 120;
+    var ctx = canvas.getContext('2d');
+    var rafId;
 
-    function drawFrame() {
-      ctx.fillStyle = '#0a0c0f';
-      ctx.fillRect(0, 0, 320, 100);
-      const now = Date.now();
-      const pulse = 0.5 + 0.5 * Math.sin(now / 400);
-      ctx.beginPath();
-      ctx.arc(30, 50, 8 + pulse * 4, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 229, 160, ${0.6 + pulse * 0.4})`;
-      ctx.fill();
-      ctx.fillStyle = '#e8ecf2';
-      ctx.font = 'bold 18px sans-serif';
-      ctx.fillText('LIVE TRACKING', 52, 44);
-      ctx.fillStyle = '#00e5a0';
-      ctx.font = '11px monospace';
-      ctx.fillText('Active in Background', 52, 66);
+    function draw() {
+      ctx.fillStyle = '#0a0c0f'; ctx.fillRect(0,0,320,120);
+      // Pulsing dot
+      var p = 0.5 + 0.5 * Math.sin(Date.now()/400);
+      ctx.beginPath(); ctx.arc(30,60, 8+p*4, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,229,160,'+(0.5+p*0.5)+')'; ctx.fill();
+      ctx.beginPath(); ctx.arc(30,60,7,0,Math.PI*2);
+      ctx.fillStyle = '#00e5a0'; ctx.fill();
+      // Text
+      ctx.fillStyle = '#e8ecf2'; ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('LIVE TRACKING', 50, 42);
+      ctx.fillStyle = '#5a6478'; ctx.font = '12px monospace';
+      ctx.fillText(myName || 'Tracker', 50, 62);
+      ctx.fillStyle = '#00e5a0'; ctx.font = '11px monospace';
+      ctx.fillText(currentPos.lat + ', ' + currentPos.lng, 50, 82);
+      ctx.fillText('Update #' + updateCount, 50, 100);
+      rafId = requestAnimationFrame(draw);
     }
+    draw();
 
-    let rafId;
-    function animate() { drawFrame(); rafId = requestAnimationFrame(animate); }
-    animate();
+    // Silent audio keeps browser from killing the page
+    var ac  = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ac.createOscillator();
+    var gain= ac.createGain();
+    var dst = ac.createMediaStreamDestination();
+    gain.gain.value = 0.001;
+    osc.connect(gain); gain.connect(dst); osc.start();
 
-    // Fix: Add playsinline and muted to ensure mobile browsers allow playback
-    const stream = canvas.captureStream(10); 
-    const pipVideo = document.getElementById('pip-video');
+    var stream = canvas.captureStream(10);
+    stream.addTrack(dst.stream.getAudioTracks()[0]);
+
+    var pipVideo = document.getElementById('pip-video');
     pipVideo.srcObject = stream;
-    pipVideo.muted = true; 
-    pipVideo.playsInline = true;
-
+    pipVideo.muted = false;
     await pipVideo.play();
     await pipVideo.requestPictureInPicture();
 
     pipActive = true;
-    pipBtn.innerHTML = '<span style="font-size:16px">⧉</span> Background Mode Active';
-    pipBtn.style.borderColor = 'rgba(0,229,160,0.5)';
-    pipBtn.style.color = 'var(--accent)';
+    btn.textContent = '⧉ Background Mode Active';
+    btn.classList.add('active');
 
-    pipVideo.addEventListener('leavepictureinpicture', () => {
+    pipVideo.addEventListener('leavepictureinpicture', function() {
       pipActive = false;
       cancelAnimationFrame(rafId);
-      pipBtn.innerHTML = '<span style="font-size:16px">⧉</span> Enable Background Mode';
-      pipBtn.style.borderColor = 'rgba(0,184,255,0.35)';
-      pipBtn.style.color = 'var(--accent2)';
-    }, { once: true });
+      ac.close();
+      btn.innerHTML = '<span style="font-size:16px">⧉</span> Enable Background Mode';
+      btn.classList.remove('active');
+    }, {once:true});
 
   } catch(e) {
-    console.error('PiP failed:', e);
-    pipBtn.innerHTML = '⧉ PiP blocked by your Phone OS';
-    pipBtn.style.opacity = '0.5';
-    pipBtn.disabled = true;
+    console.warn('PiP failed:', e);
+    btn.textContent = '⧉ Not supported on this browser';
+    btn.disabled = true;
   }
 }
 </script>

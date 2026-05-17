@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -13,769 +13,1006 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <style>
-  :root {
-    --bg:#0a0c0f; --surface:#111318; --surface2:#181c23; --border:#1f2530;
-    --accent:#00e5a0; --accent2:#00b8ff; --warn:#ff9f40; --danger:#ff4d4d;
-    --text:#e8ecf2; --muted:#5a6478;
-    --font-display:'Syne',sans-serif; --font-mono:'DM Mono',monospace; --radius:10px;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:var(--font-display); height:100vh; overflow:hidden; display:grid; grid-template-rows:52px 1fr; grid-template-columns:1fr 320px; }
+/* ━━ TOKENS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  --bg:#0a0c0f; --surface:#111318; --surface2:#181c23; --border:#1f2530;
+  --accent:#00e5a0; --accent2:#00b8ff; --warn:#ff9f40; --danger:#ff4d4d;
+  --text:#e8ecf2; --muted:#5a6478;
+  --fm:'Syne',sans-serif; --mm:'DM Mono',monospace; --r:10px;
+}
+[data-theme="light"] {
+  --bg:#f0f2f5; --surface:#fff; --surface2:#e8eaee;
+  --border:#d0d4dc; --text:#1a1d24; --muted:#7a8299;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
 
-  /* HEADER */
-  header { grid-column:1/-1; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:14px; }
-  .logo { font-size:18px; font-weight:800; letter-spacing:-0.5px; color:var(--accent); }
-  .logo span { color:var(--text); }
-  .header-status { font-family:var(--font-mono); font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
-  .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:background 0.4s; }
-  .dot.live { background:var(--accent); box-shadow:0 0 6px var(--accent); animation:pulse 2s infinite; }
-  .dot.error { background:var(--danger); }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-  .header-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
-  .session-id { font-family:var(--font-mono); font-size:11px; color:var(--muted); background:var(--bg); padding:4px 10px; border-radius:6px; border:1px solid var(--border); }
-  .session-id span { color:var(--accent2); }
-  #gesture-toggle-btn { font-family:var(--font-mono); font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:var(--bg); color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:6px; transition:border-color 0.2s,color 0.2s,background 0.2s; white-space:nowrap; }
-  #gesture-toggle-btn:hover { border-color:var(--accent); color:var(--accent); }
-  #gesture-toggle-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,0.08); }
-  #gesture-toggle-btn .btn-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); transition:background 0.2s; }
-  #gesture-toggle-btn.active .btn-dot { background:var(--accent); box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
+/* ━━ LAYOUT ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+body {
+  background:var(--bg); color:var(--text); font-family:var(--fm);
+  height:100vh; overflow:hidden;
+  display:grid; grid-template-rows:52px 1fr; grid-template-columns:1fr 320px;
+  transition:background .3s,color .3s;
+}
+body.sb-off { grid-template-columns:1fr 0px; }
 
-  /* MAP */
-  #map { grid-column:1; grid-row:2; background:#0d1117; position:relative; }
-  #map.fist-active { cursor:grabbing !important; }
+/* ━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+header {
+  grid-column:1/-1; background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 16px; gap:12px;
+}
+.logo { font-size:18px; font-weight:800; letter-spacing:-.5px; color:var(--accent); }
+.logo span { color:var(--text); }
+.hstat { font-family:var(--mm); font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .4s; }
+.dot.live  { background:var(--accent); box-shadow:0 0 6px var(--accent); animation:pulse 2s infinite; }
+.dot.error { background:var(--danger); }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+.hright { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.sid-box { font-family:var(--mm); font-size:11px; color:var(--muted); background:var(--bg); padding:4px 10px; border-radius:6px; border:1px solid var(--border); }
+.sid-box span { color:var(--accent2); }
+.hbtn {
+  font-family:var(--mm); font-size:11px; padding:5px 11px; border-radius:20px;
+  border:1px solid var(--border); background:var(--bg); color:var(--muted);
+  cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition:border-color .2s,color .2s,background .2s; white-space:nowrap;
+}
+.hbtn:hover { border-color:var(--accent); color:var(--accent); }
+.hbtn.on { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,.08); }
+.hbtn .bdot { width:6px; height:6px; border-radius:50%; background:var(--muted); transition:background .2s; }
+.hbtn.on .bdot { background:var(--accent); box-shadow:0 0 5px var(--accent); animation:pulse 2s infinite; }
 
-  /* Camera feed overlay on map */
-  #cam-feed-panel {
-    position:absolute; bottom:16px; left:16px; z-index:800;
-    width:240px; background:var(--surface); border:1px solid var(--border);
-    border-radius:12px; overflow:hidden; display:none; flex-direction:column;
-    box-shadow:0 4px 24px rgba(0,0,0,0.6);
-  }
-  #cam-feed-panel.visible { display:flex; }
-  #cam-feed-header {
-    padding:8px 12px; display:flex; align-items:center; gap:8px;
-    border-bottom:1px solid var(--border);
-  }
-  .cam-feed-dot { width:6px; height:6px; border-radius:50%; background:var(--danger); animation:pulse 1s infinite; }
-  .cam-feed-name { font-family:var(--font-mono); font-size:10px; color:var(--text); flex:1; }
-  .cam-feed-close { font-family:var(--font-mono); font-size:10px; color:var(--muted); cursor:pointer; background:none; border:none; }
-  .cam-feed-close:hover { color:var(--danger); }
-  #cam-feed-video { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#000; }
-  #cam-feed-audio-indicator {
-    padding:6px 12px; font-family:var(--font-mono); font-size:9px; color:var(--accent);
-    display:none; background:rgba(0,229,160,0.06); border-top:1px solid var(--border);
-  }
-  #cam-feed-audio-indicator.visible { display:block; }
+/* dashboard mic ON indicator */
+.hbtn.mic-live { border-color:var(--danger); color:var(--danger); background:rgba(255,77,77,.08); animation:micpulse 1.2s infinite; }
+@keyframes micpulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,77,77,.3)} 50%{box-shadow:0 0 0 4px rgba(255,77,77,.0)} }
 
-  /* SIDEBAR */
-  #sidebar { grid-column:2; grid-row:2; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
-  #qr-panel { padding:16px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .panel-label { font-family:var(--font-mono); font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; align-self:flex-start; }
-  #qr-box { background:#fff; padding:10px; border-radius:var(--radius); display:flex; align-items:center; justify-content:center; width:150px; height:150px; }
-  .qr-link { font-family:var(--font-mono); font-size:9.5px; color:var(--accent2); word-break:break-all; text-align:center; line-height:1.5; }
-  .tracker-count-badge { font-family:var(--font-mono); font-size:11px; color:var(--accent); background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.25); padding:3px 10px; border-radius:20px; }
+/* ━━ MAP ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#map { grid-column:1; grid-row:2; position:relative; background:#0d1117; }
+#map.fist { cursor:grabbing !important; }
+#sb-open {
+  position:absolute; top:12px; right:12px; z-index:900;
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:6px 12px; cursor:pointer; font-family:var(--mm); font-size:11px;
+  color:var(--muted); display:none; align-items:center; gap:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+#sb-open:hover { color:var(--text); border-color:var(--accent2); }
+body.sb-off #sb-open { display:flex; }
 
-  #tracker-list-wrap { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
-  #tracker-list-wrap::-webkit-scrollbar { width:4px; }
-  #tracker-list-wrap::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+/* ━━ CAM FEED PANEL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#cam-panel {
+  position:absolute; bottom:16px; left:16px; z-index:800;
+  width:270px; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; overflow:hidden; display:none; flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,.6); transition:width .3s;
+}
+#cam-panel.open { display:flex; }
+#cam-panel.big  { width:calc(50vw - 32px); }
+#cam-hdr { padding:8px 12px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.livedot { width:6px; height:6px; border-radius:50%; background:var(--danger); animation:pulse 1s infinite; flex-shrink:0; }
+.cam-nm { font-family:var(--mm); font-size:10px; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cbtn { background:none; border:none; cursor:pointer; font-size:13px; color:var(--muted); padding:2px 4px; border-radius:4px; }
+.cbtn:hover { color:var(--text); background:var(--surface2); }
+#cam-video { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#000; }
+#audio-bar { padding:5px 12px; font-family:var(--mm); font-size:9px; color:var(--accent); display:none; background:rgba(0,229,160,.06); border-top:1px solid var(--border); align-items:center; gap:6px; }
+#audio-bar.show { display:flex; }
+.wave { display:flex; gap:2px; align-items:center; }
+.wave b { display:block; width:2px; background:var(--accent); border-radius:2px; animation:wav .8s ease-in-out infinite; }
+.wave b:nth-child(2){animation-delay:.1s}.wave b:nth-child(3){animation-delay:.2s}.wave b:nth-child(4){animation-delay:.3s}
+@keyframes wav { 0%,100%{height:3px}50%{height:12px} }
 
-  /* TRACKER CARD */
-  .tracker-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; cursor:pointer; transition:border-color 0.2s,transform 0.15s; position:relative; overflow:hidden; }
-  .tracker-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); border-radius:3px 0 0 3px; opacity:0; transition:opacity 0.2s; }
-  .tracker-card:hover { border-color:var(--accent); transform:translateX(2px); }
-  .tracker-card:hover::before { opacity:1; }
-  .tracker-card.offline { opacity:0.45; }
-  .tracker-card.offline::before { background:var(--muted); opacity:1; }
+/* ━━ SIDEBAR ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#sidebar { grid-column:2; grid-row:2; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; transition:width .3s,opacity .3s; }
+body.sb-off #sidebar { width:0; opacity:0; pointer-events:none; }
+#sb-hdr { padding:12px 16px 0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.sblabel { font-family:var(--mm); font-size:10px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; }
+#sb-close { width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+#sb-close:hover { background:var(--border); color:var(--text); }
+#qr-panel { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:10px; flex-shrink:0; }
+#qr-box { background:#fff; padding:10px; border-radius:var(--r); display:flex; align-items:center; justify-content:center; width:148px; height:148px; }
+.qr-url { font-family:var(--mm); font-size:9px; color:var(--accent2); word-break:break-all; text-align:center; line-height:1.5; }
+.count-badge { font-family:var(--mm); font-size:11px; color:var(--accent); background:rgba(0,229,160,.08); border:1px solid rgba(0,229,160,.25); padding:3px 12px; border-radius:20px; }
+#tracker-list { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+#tracker-list::-webkit-scrollbar { width:4px; }
+#tracker-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
-  /* Raised hand card state */
-  .tracker-card.hand-raised { border-color:var(--warn) !important; order:-1; }
-  .tracker-card.hand-raised::before { background:var(--warn) !important; opacity:1 !important; }
-  @keyframes cardpulse {
-    0%,100% { box-shadow:0 0 0 2px rgba(255,159,64,0.2); }
-    50% { box-shadow:0 0 0 5px rgba(255,159,64,0.08); }
-  }
-  .tracker-card.hand-raised { animation:cardpulse 1.5s ease-in-out infinite; }
+/* ━━ TRACKER CARDS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height:100%; color:var(--muted); font-family:var(--mm); font-size:11px; text-align:center; line-height:1.6; }
+#empty span { font-size:28px; opacity:.3; }
 
-  /* Card selected state */
-  .tracker-card.selected { border-color:var(--accent2) !important; }
-  .tracker-card.selected::before { background:var(--accent2) !important; opacity:1 !important; }
+.card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); padding:10px 12px; cursor:pointer; transition:border-color .2s,transform .15s; position:relative; overflow:hidden; }
+.card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); border-radius:3px 0 0 3px; opacity:0; transition:opacity .2s; }
+.card:hover { border-color:var(--accent); transform:translateX(2px); }
+.card:hover::before { opacity:1; }
+.card.offline { opacity:.4; pointer-events:none; }
+.card.offline::before { background:var(--muted); opacity:1; }
+.card.sel { border-color:var(--accent2)!important; }
+.card.sel::before { background:var(--accent2)!important; opacity:1!important; }
+.card.raised { border-color:var(--warn)!important; animation:cpulse 1.5s ease-in-out infinite; }
+.card.raised::before { background:var(--warn)!important; opacity:1!important; }
+@keyframes cpulse { 0%,100%{box-shadow:0 0 0 2px rgba(255,159,64,.15)} 50%{box-shadow:0 0 0 5px rgba(255,159,64,.05)} }
 
-  .tracker-name-row { font-size:13px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; margin-bottom:6px; }
-  .tracker-status-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
-  .tracker-card.offline .tracker-status-dot { background:var(--muted); }
-  .hand-badge { font-size:12px; margin-left:auto; }
+.cname { font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.cdot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.hbadge { font-size:11px; }
+.disc-x { margin-left:auto; background:none; border:none; cursor:pointer; font-size:13px; color:var(--muted); padding:0 2px; line-height:1; flex-shrink:0; transition:color .15s; }
+.disc-x:hover { color:var(--danger); }
 
-  .tracker-meta { display:grid; grid-template-columns:1fr 1fr; gap:4px 8px; margin-bottom:8px; }
-  .meta-item { font-family:var(--font-mono); font-size:10px; color:var(--muted); display:flex; align-items:center; gap:4px; }
-  .meta-item .val { color:var(--text); font-size:10px; }
-  .meta-item .val.warn { color:var(--warn); }
-  .meta-item .val.danger { color:var(--danger); }
-  .battery-bar { width:28px; height:6px; background:var(--border); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; }
-  .battery-fill { height:100%; border-radius:3px; background:var(--accent); transition:width 0.5s; }
-  .battery-fill.warn { background:var(--warn); }
-  .battery-fill.danger { background:var(--danger); }
+.cmeta { display:grid; grid-template-columns:1fr 1fr; gap:4px 8px; margin-bottom:8px; }
+.mi { font-family:var(--mm); font-size:10px; color:var(--muted); display:flex; align-items:center; gap:3px; }
+.mi .v { color:var(--text); }
+.mi .v.w { color:var(--warn); }
+.mi .v.d { color:var(--danger); }
+.batbar { width:26px; height:5px; background:var(--border); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; }
+.batfill { height:100%; border-radius:3px; background:var(--accent); transition:width .5s; }
+.batfill.w { background:var(--warn); }
+.batfill.d { background:var(--danger); }
 
-  /* Media row on card */
-  .card-media-row { display:flex; align-items:center; gap:5px; padding-top:8px; border-top:1px solid var(--border); flex-wrap:nowrap; }
-  .media-btn { font-family:var(--font-mono); font-size:9px; padding:3px 7px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:3px; transition:border-color 0.15s,color 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; }
-  .media-btn:hover { border-color:var(--accent2); color:var(--accent2); }
-  .media-btn.on { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,0.07); }
-  .media-btn.on:hover { border-color:var(--danger); color:var(--danger); background:rgba(255,77,77,0.06); }
-  .media-btn-spacer { flex:1; }
-  .center-btn { font-family:var(--font-mono); font-size:9px; color:var(--accent2); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline; text-underline-offset:2px; flex-shrink:0; }
-  .center-btn:hover { color:var(--accent); }
+.cmedia { display:flex; align-items:center; gap:4px; padding-top:8px; border-top:1px solid var(--border); flex-wrap:nowrap; }
+.mbtn { font-family:var(--mm); font-size:9px; padding:3px 7px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:3px; transition:border-color .15s,color .15s,background .15s; white-space:nowrap; flex-shrink:0; }
+.mbtn:hover { border-color:var(--accent2); color:var(--accent2); }
+.mbtn.on  { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,.07); }
+.mbtn.on:hover { border-color:var(--danger); color:var(--danger); background:rgba(255,77,77,.06); }
+/* speak button — red when active (dashboard is talking to this tracker) */
+.mbtn.speaking { border-color:var(--danger)!important; color:var(--danger)!important; background:rgba(255,77,77,.09)!important; animation:micpulse 1.2s infinite; }
+.msp { flex:1; min-width:0; }
+.focbtn { font-family:var(--mm); font-size:9px; color:var(--accent2); background:none; border:none; cursor:pointer; text-decoration:underline; text-underline-offset:2px; flex-shrink:0; }
+.focbtn:hover { color:var(--accent); }
 
-  /* Empty state */
-  #empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height:100%; color:var(--muted); font-family:var(--font-mono); font-size:11px; text-align:center; line-height:1.6; }
-  .empty-icon { font-size:28px; opacity:0.3; }
+/* ━━ CONFIG OVERLAY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#cfg { position:fixed; inset:0; background:rgba(10,12,15,.96); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(4px); }
+.cfg-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:36px; width:440px; display:flex; flex-direction:column; gap:20px; }
+.cfg-title { font-size:22px; font-weight:800; color:var(--accent); }
+.cfg-sub { font-family:var(--mm); font-size:11px; color:var(--muted); margin-top:-12px; line-height:1.7; }
+.cfg-field label { font-family:var(--mm); font-size:10px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px; }
+.cfg-field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--mm); font-size:12px; padding:10px 14px; outline:none; transition:border-color .2s; }
+.cfg-field input:focus { border-color:var(--accent2); }
+.cfg-hint { font-family:var(--mm); font-size:10px; color:var(--muted); margin-top:-12px; }
+.cfg-hint a { color:var(--accent2); text-decoration:none; }
+#cfg-err { font-family:var(--mm); font-size:11px; color:var(--danger); display:none; }
+.cfg-btn { background:var(--accent); color:#000; font-family:var(--fm); font-weight:700; font-size:14px; border:none; border-radius:8px; padding:13px; cursor:pointer; transition:opacity .2s,transform .15s; }
+.cfg-btn:hover { opacity:.88; transform:translateY(-1px); }
+.cfg-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
-  /* Config overlay */
-  #config-overlay { position:fixed; inset:0; background:rgba(10,12,15,0.96); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(4px); }
-  .config-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:36px; width:420px; display:flex; flex-direction:column; gap:20px; }
-  .config-title { font-size:22px; font-weight:800; color:var(--accent); }
-  .config-sub { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:-12px; line-height:1.6; }
-  .config-field label { font-family:var(--font-mono); font-size:10px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:6px; }
-  .config-field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-mono); font-size:12px; padding:10px 14px; outline:none; transition:border-color 0.2s; }
-  .config-field input:focus { border-color:var(--accent2); }
-  .config-start { background:var(--accent); color:#000; font-family:var(--font-display); font-weight:700; font-size:14px; border:none; border-radius:8px; padding:12px; cursor:pointer; transition:opacity 0.2s,transform 0.15s; }
-  .config-start:hover { opacity:0.88; transform:translateY(-1px); }
+/* ━━ MAP MARKERS & POPUPS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.mkr { width:36px; height:36px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.5); transition:transform .2s; }
+.mkr.sel { transform:rotate(-45deg) scale(1.3); border-color:var(--accent2)!important; box-shadow:0 0 0 3px rgba(0,184,255,.35); }
+.mkr-in { transform:rotate(45deg); color:#fff; font-size:11px; font-weight:700; font-family:'Syne',sans-serif; }
+.leaflet-popup-content-wrapper { background:var(--surface)!important; border:1px solid var(--border)!important; color:var(--text)!important; border-radius:10px!important; box-shadow:0 8px 24px rgba(0,0,0,.5)!important; }
+.leaflet-popup-tip { background:var(--surface)!important; }
+.pname { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; margin-bottom:6px; }
+.prow  { font-family:'DM Mono',monospace; font-size:11px; color:#8899aa; margin:2px 0; }
+.prow span { color:#e8ecf2; }
+.prow span.a { color:var(--accent); }
+.prow span.w { color:var(--warn); }
+.prow span.d { color:var(--danger); }
 
-  /* Map markers */
-  .tracker-marker { width:36px; height:36px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.5); transition:transform 0.3s; }
-  .tracker-marker.selected-marker { transform:rotate(-45deg) scale(1.25); border-color:var(--accent2); box-shadow:0 0 0 3px rgba(0,184,255,0.4); }
-  .tracker-marker-inner { transform:rotate(45deg); color:#fff; font-size:11px; font-weight:700; font-family:'Syne',sans-serif; }
+/* ━━ TOAST ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(70px); background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:var(--mm); font-size:12px; padding:10px 22px; border-radius:30px; transition:transform .3s; z-index:9998; pointer-events:none; }
+#toast.show { transform:translateX(-50%) translateY(0); }
+#toast.alert { border-color:var(--warn); color:var(--warn); }
 
-  /* Popup */
-  .leaflet-popup-content-wrapper { background:var(--surface) !important; border:1px solid var(--border) !important; color:var(--text) !important; border-radius:10px !important; box-shadow:0 8px 24px rgba(0,0,0,0.5) !important; }
-  .leaflet-popup-tip { background:var(--surface) !important; }
-  .popup-name { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; margin-bottom:6px; }
-  .popup-row { font-family:'DM Mono',monospace; font-size:11px; color:#8899aa; margin:2px 0; }
-  .popup-row span { color:#e8ecf2; }
-  .popup-row span.accent { color:var(--accent); }
-  .popup-row span.warn { color:var(--warn); }
-  .popup-row span.danger { color:var(--danger); }
-
-  /* Toast */
-  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(60px); background:var(--surface); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); font-size:12px; padding:10px 20px; border-radius:30px; transition:transform 0.3s; z-index:999; }
-  #toast.show { transform:translateX(-50%) translateY(0); }
-  #toast.alert { border-color:var(--warn); color:var(--warn); }
-
-  /* Gesture box */
-  #gesture-ui { position:fixed; bottom:20px; right:340px; width:186px; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; z-index:1001; cursor:move; display:none; flex-direction:column; }
-  #gesture-ui.visible { display:flex; }
-  #gesture-video-wrap { position:relative; width:186px; height:124px; background:#000; flex-shrink:0; }
-  #ai-webcam { display:none; }
-  #ai-canvas { width:100%; height:100%; transform:scaleX(-1); display:block; }
-  #gesture-label { position:absolute; top:5px; left:5px; font-size:9px; font-family:var(--font-mono); color:var(--accent); background:rgba(0,0,0,0.75); padding:2px 6px; border-radius:4px; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis; }
-  #fist-cursor { position:fixed; width:32px; height:32px; border-radius:50%; border:2px solid var(--accent); background:rgba(0,229,160,0.15); pointer-events:none; z-index:1002; display:none; transform:translate(-50%,-50%); font-size:16px; display:none; align-items:center; justify-content:center; }
-  #gesture-legend { padding:8px 10px; display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--border); }
-  .legend-row { font-family:var(--font-mono); font-size:9px; color:var(--muted); display:flex; align-items:center; gap:6px; }
-  .legend-row .gi { font-size:12px; }
-  .legend-row .ga { color:var(--text); }
+/* ━━ GESTURE BOX ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+#gbox { position:fixed; bottom:20px; right:340px; width:192px; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; z-index:1001; cursor:move; display:none; flex-direction:column; }
+#gbox.show { display:flex; }
+#gvid-wrap { position:relative; width:192px; height:128px; background:#000; flex-shrink:0; }
+#g-webcam { display:none; }
+#g-canvas { width:100%; height:100%; transform:scaleX(-1); display:block; }
+#glabel { position:absolute; top:5px; left:5px; font-size:9px; font-family:var(--mm); color:var(--accent); background:rgba(0,0,0,.8); padding:2px 6px; border-radius:4px; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis; }
+#glegend { padding:8px 10px; display:flex; flex-direction:column; gap:4px; border-top:1px solid var(--border); }
+.grow { font-family:var(--mm); font-size:9px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.grow i { font-size:13px; }
+.grow s { color:var(--text); }
+#fcursor { position:fixed; width:34px; height:34px; border-radius:50%; border:2px solid var(--accent); background:rgba(0,229,160,.12); pointer-events:none; z-index:1002; display:none; align-items:center; justify-content:center; font-size:16px; transform:translate(-50%,-50%); }
 </style>
 </head>
 <body>
 
-<!-- Config -->
-<div id="config-overlay">
-  <div class="config-box">
-    <div class="config-title">LiveTrack</div>
-    <div class="config-sub">Enter your server URL and session name to start.</div>
-    <div class="config-field"><label>Server URL</label><input id="server-url" type="text" placeholder="https://your-app.railway.app"/></div>
-    <div class="config-field"><label>Session name</label><input id="session-name" type="text" placeholder="Morning Route — 12 Apr"/></div>
-    <button class="config-start" onclick="startSession()">Start Session →</button>
+<!-- CONFIG OVERLAY -->
+<div id="cfg">
+  <div class="cfg-box">
+    <div class="cfg-title">LiveTrack</div>
+    <div class="cfg-sub">Enter your server URL and a session name.<br>Trackers join by scanning the QR code.</div>
+    <div class="cfg-field">
+      <label>Server URL</label>
+      <input id="inp-url" type="url" placeholder="https://your-app.railway.app" autocomplete="url"/>
+    </div>
+    <div class="cfg-hint">Deploy free on <a href="https://railway.app" target="_blank">railway.app</a></div>
+    <div class="cfg-field">
+      <label>Session name</label>
+      <input id="inp-name" type="text" placeholder="Morning Route · 12 Apr" autocomplete="off"/>
+    </div>
+    <div id="cfg-err">⚠ Cannot connect — check the URL and try again.</div>
+    <button class="cfg-btn" id="cfg-go" onclick="startSession()">Start Session →</button>
   </div>
 </div>
 
-<!-- Fist cursor -->
-<div id="fist-cursor">✊</div>
+<!-- FIST CURSOR -->
+<div id="fcursor">✊</div>
 
-<!-- Gesture box -->
-<div id="gesture-ui">
-  <div id="gesture-video-wrap">
-    <video id="ai-webcam"></video>
-    <canvas id="ai-canvas" width="320" height="240"></canvas>
-    <div id="gesture-label">Camera off</div>
+<!-- GESTURE BOX -->
+<div id="gbox">
+  <div id="gvid-wrap">
+    <video id="g-webcam"></video>
+    <canvas id="g-canvas" width="320" height="240"></canvas>
+    <div id="glabel">Camera off</div>
   </div>
-  <div id="gesture-legend">
-    <div class="legend-row"><span class="gi">👍</span><span class="ga">Recenter all</span></div>
-    <div class="legend-row"><span class="gi">✌️</span><span class="ga">Zoom in</span></div>
-    <div class="legend-row"><span class="gi">🖐️</span><span class="ga">Zoom out</span></div>
-    <div class="legend-row"><span class="gi">✊</span><span class="ga">Grab & pan</span></div>
+  <div id="glegend">
+    <div class="grow"><i>✊</i><s>Grab &amp; pan map</s></div>
+    <div class="grow"><i>👌</i><s>Recenter all</s></div>
+    <div class="grow"><i>✌️</i><s>Zoom in</s></div>
+    <div class="grow"><i>🖐️</i><s>Zoom out</s></div>
   </div>
 </div>
 
 <header>
   <div class="logo">Live<span>Track</span></div>
-  <div class="header-status"><div class="dot" id="status-dot"></div><span id="status-text">Not connected</span></div>
-  <div class="header-right">
-    <button id="gesture-toggle-btn" onclick="toggleGesture()"><span class="btn-dot"></span>Gesture Control</button>
-    <div class="session-id">Session: <span id="sid-display">—</span></div>
+  <div class="hstat"><div class="dot" id="dot"></div><span id="stxt">Not connected</span></div>
+  <div class="hright">
+    <button class="hbtn" id="theme-btn"  onclick="toggleTheme()">🛰️ Sat</button>
+    <button class="hbtn" id="mic-btn"    onclick="toggleDashMic()" title="Talk to selected tracker">🎙️ Speak</button>
+    <button class="hbtn" id="gest-btn"   onclick="toggleGesture()"><span class="bdot"></span>Gesture</button>
+    <div class="sid-box">Session: <span id="sid">—</span></div>
   </div>
 </header>
 
 <div id="map">
-  <!-- Camera feed panel (bottom-left of map) -->
-  <div id="cam-feed-panel">
-    <div id="cam-feed-header">
-      <div class="cam-feed-dot"></div>
-      <div class="cam-feed-name" id="cam-feed-name">—</div>
-      <button class="cam-feed-close" onclick="closeCamFeed()">✕</button>
+  <button id="sb-open" onclick="toggleSidebar()">☰ Panel</button>
+  <div id="cam-panel">
+    <div id="cam-hdr">
+      <div class="livedot"></div>
+      <div class="cam-nm" id="cam-nm">—</div>
+      <button class="cbtn" id="cam-exp-btn" onclick="toggleCamExpand()" title="Expand">⤢</button>
+      <button class="cbtn" onclick="closeCamFeed()" title="Close">✕</button>
     </div>
-    <video id="cam-feed-video" autoplay playsinline muted></video>
-    <div id="cam-feed-audio-indicator">🎙️ Microphone active</div>
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div id="audio-bar">
+      <div class="wave"><b></b><b></b><b></b><b></b></div>
+      🎙️ Mic active
+    </div>
   </div>
 </div>
 
 <div id="sidebar">
-  <div id="qr-panel">
-    <div class="panel-label">Scan to join</div>
-    <div id="qr-box"><div id="qrcode"></div></div>
-    <div class="qr-link" id="qr-url-text">—</div>
-    <div class="tracker-count-badge"><span id="tracker-count">0</span> connected</div>
+  <div id="sb-hdr">
+    <div class="sblabel">Scan to join</div>
+    <button id="sb-close" onclick="toggleSidebar()">✕</button>
   </div>
-  <div id="tracker-list-wrap">
-    <div id="empty-state"><div class="empty-icon">📡</div><div>Waiting for trackers<br>to scan and join…</div></div>
+  <div id="qr-panel">
+    <div id="qr-box"><div id="qrcode"></div></div>
+    <div class="qr-url" id="qr-url">Start a session to show QR</div>
+    <div class="count-badge"><span id="cnt">0</span> connected</div>
+  </div>
+  <div id="tracker-list">
+    <div id="empty"><span>📡</span><div>Waiting for trackers<br>to scan and join…</div></div>
   </div>
 </div>
 
 <div id="toast"></div>
-
-<!-- Hidden audio for host to hear tracker mic -->
-<audio id="host-remote-audio" autoplay playsinline style="display:none"></audio>
+<audio id="remote-audio" autoplay playsinline style="display:none"></audio>
 
 <script>
-// ════════════════════════════════════════════════════════════
-// GLOBALS
-// ════════════════════════════════════════════════════════════
-let socket, map, sessionId;
-const trackers = new Map(); // id → { data, marker, card, media, peer }
-const COLORS = ['#00e5a0','#00b8ff','#ff9f40','#c084fc','#fb7185','#34d399','#f472b6','#60a5fa'];
-let colorIdx = 0;
-let selectedTrackerId = null;
-let activeCamTrackerId = null;
-let activeMicTrackerId = null;
-const mapEl = document.getElementById('map');
+(function(){
+'use strict';
 
-// ── MAP ───────────────────────────────────────────────────────────────────
-function initMap() {
-  map = L.map('map', { zoomControl: false }).setView([22.9, 78.6], 5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'© OpenStreetMap © CARTO', maxZoom:19 }).addTo(map);
-  L.control.zoom({ position:'bottomright' }).addTo(map);
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MAP TILES  — 3 themes: satellite (default) → light → dark
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+var TILES = {
+  sat:  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  light:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+};
+var THEME_CYCLE = ['sat','light','dark'];
+var THEME_LABELS = { sat:'🛰️ Sat', light:'☀️ Light', dark:'🌙 Dark' };
+var THEME_NEXT   = { sat:'light', light:'dark', dark:'sat' };
+var COLORS = ['#00e5a0','#00b8ff','#ff9f40','#c084fc','#fb7185','#34d399','#f472b6','#60a5fa'];
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   STATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+var socket     = null;
+var map        = null;
+var tileLayer  = null;
+var sessionId  = null;
+var trackers   = new Map();   // id → {data, marker, card, media, peer, iceBuf}
+var colorIdx   = 0;
+var selId      = null;        // selected tracker id
+var camId      = null;        // tracker whose camera is active
+var micId      = null;        // tracker whose mic is active (streaming to dashboard)
+var speakId    = null;        // tracker the dashboard is currently SPEAKING TO
+var camBig     = false;
+var sbOpen     = true;
+var mapTheme   = 'sat';       // default = satellite
+var uiTheme    = 'dark';      // CSS theme (dark / light)
+var iceServers = [{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+var toastTid   = null;
+
+/* Dashboard microphone stream — used for speaking to trackers */
+var dashMicStream  = null;
+var dashMicPending = false;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   THEME  (UI colours + map tiles are independent)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function applyUITheme(t) {
+  uiTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('lt_ui', t); } catch(e){}
 }
 
-// ── SESSION ───────────────────────────────────────────────────────────────
-function startSession() {
-  const serverUrl = document.getElementById('server-url').value.trim().replace(/\/$/,'');
-  const sessionName = document.getElementById('session-name').value.trim() || 'Session-' + Date.now();
-  if (!serverUrl) { showToast('Please enter a server URL'); return; }
+function applyMapTheme(t) {
+  mapTheme = t;
+  var btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = THEME_LABELS[t];
+  try { localStorage.setItem('lt_map', t); } catch(e){}
+  if (tileLayer) tileLayer.setUrl(TILES[t]);
+}
 
-  sessionId = encodeURIComponent(sessionName.replace(/\s+/g,'-').toLowerCase()) + '-' + Math.random().toString(36).slice(2,7);
-  const trackerUrl = `${window.location.origin}/mobile.html?server=${encodeURIComponent(serverUrl)}&session=${encodeURIComponent(sessionId)}`;
+/* Clicking theme button cycles: sat → light → dark → sat
+   Also toggles CSS theme when moving to/from dark */
+function toggleTheme() {
+  var next = THEME_NEXT[mapTheme];
+  applyMapTheme(next);
+  /* Keep UI dark for sat/dark, light for light map */
+  applyUITheme(next === 'light' ? 'light' : 'dark');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SIDEBAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function toggleSidebar() {
+  sbOpen = !sbOpen;
+  document.body.classList.toggle('sb-off', !sbOpen);
+  setTimeout(function(){ if (map) map.invalidateSize(); }, 350);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MAP INIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function initMap() {
+  map = L.map('map', {zoomControl:false}).setView([22.9, 78.6], 5);
+  tileLayer = L.tileLayer(TILES[mapTheme], {
+    attribution:'© Esri / OpenStreetMap © CARTO', maxZoom:20
+  }).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SESSION START
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function startSession() {
+  var srvUrl = document.getElementById('inp-url').value.trim().replace(/\/$/,'');
+  var sName  = document.getElementById('inp-name').value.trim() || ('Session-'+Date.now());
+  var errEl  = document.getElementById('cfg-err');
+  var goBtn  = document.getElementById('cfg-go');
+
+  errEl.style.display = 'none';
+  if (!srvUrl)                        { toast('Please enter a server URL'); return; }
+  if (!/^https?:\/\//i.test(srvUrl))  { toast('URL must start with http:// or https://'); return; }
+
+  goBtn.disabled = true;
+  goBtn.textContent = 'Connecting…';
+
+  sessionId = sName.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')
+            + '-' + Math.random().toString(36).slice(2,7);
+
+  var trackerUrl = window.location.origin + '/mobile.html'
+    + '?server=' + encodeURIComponent(srvUrl)
+    + '&session=' + encodeURIComponent(sessionId);
 
   document.getElementById('qrcode').innerHTML = '';
-  new QRCode(document.getElementById('qrcode'), { text:trackerUrl, width:130, height:130, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M });
-  document.getElementById('qr-url-text').textContent = trackerUrl;
-  document.getElementById('sid-display').textContent = sessionId;
+  try {
+    new QRCode(document.getElementById('qrcode'), {
+      text:trackerUrl, width:130, height:130,
+      colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M
+    });
+  } catch(e){}
+  document.getElementById('qr-url').textContent = trackerUrl;
+  document.getElementById('sid').textContent    = sessionId;
 
-  socket = io(serverUrl, { transports:['websocket','polling'] });
-  socket.on('connect', () => { setStatus('live','Connected'); socket.emit('host:create',{ sessionId }); });
-  socket.on('host:ready', () => { document.getElementById('config-overlay').style.display='none'; });
-  socket.on('host:tracker_joined', d => { addTracker(d); showToast(`${d.name} joined`); });
-  socket.on('host:location_update', d => { updateTrackerLocation(d); });
-  socket.on('host:tracker_left', ({ id }) => { removeTracker(id); });
-  socket.on('host:media_state', ({ id, camOn, camFacing, micOn }) => { updateTrackerMedia(id, camOn, camFacing, micOn); });
-  socket.on('host:raise_hand', ({ id, name, raised }) => { onRaiseHand(id, name, raised); });
-  socket.on('disconnect', () => setStatus('error','Disconnected'));
-  socket.on('connect_error', () => { setStatus('error','Connection error'); showToast('Cannot reach server.'); });
+  socket = io(srvUrl, {transports:['websocket','polling']});
 
-  // WebRTC from tracker
-  socket.on('webrtc:offer',  ({ fromId, offer })     => onTrackerOffer(fromId, offer));
-  socket.on('webrtc:answer', ({ fromId, answer })    => onTrackerAnswer(fromId, answer));
-  socket.on('webrtc:ice',    ({ fromId, candidate }) => onTrackerIce(fromId, candidate));
+  socket.on('connect', function() {
+    setStatus('live','Connected');
+    socket.emit('host:create', {sessionId:sessionId});
+  });
+  socket.on('host:ready', function() {
+    document.getElementById('cfg').style.display = 'none';
+    goBtn.disabled = false;
+    goBtn.textContent = 'Start Session →';
+    /* Request dashboard mic permission immediately after session starts
+       so it's ready before anyone clicks Speak */
+    requestDashMic();
+  });
+  socket.on('ice:config', function(d) {
+    if (d && d.iceServers) iceServers = d.iceServers;
+  });
+
+  socket.on('host:tracker_joined',  function(d) { addTracker(d);  toast(d.name+' joined'); });
+  socket.on('host:location_update', function(d) { updateLocation(d); });
+  socket.on('host:tracker_left',    function(d) { removeTracker(d.id); });
+  socket.on('host:media_state',     function(d) { updateMedia(d.id, d.camOn, d.camFacing, d.micOn); });
+  socket.on('host:raise_hand',      function(d) { onHand(d.id, d.name, d.raised); });
+
+  socket.on('webrtc:offer',  function(d) { handleOffer(d.fromId, d.offer); });
+  socket.on('webrtc:answer', function(d) { handleAnswer(d.fromId, d.answer); });
+  socket.on('webrtc:ice',    function(d) { handleIce(d.fromId, d.candidate); });
+
+  socket.on('disconnect',    function() { setStatus('error','Disconnected'); });
+  socket.on('connect_error', function() {
+    setStatus('error','Connection failed');
+    errEl.style.display = 'block';
+    goBtn.disabled = false;
+    goBtn.textContent = 'Try Again →';
+    toast('Cannot reach server — check URL.');
+  });
 }
 
-function setStatus(state, text) {
-  document.getElementById('status-dot').className = 'dot ' + state;
-  document.getElementById('status-text').textContent = text;
+function setStatus(s,t) {
+  document.getElementById('dot').className = 'dot '+s;
+  document.getElementById('stxt').textContent = t;
 }
 
-// ── TRACKER ADD / UPDATE / REMOVE ─────────────────────────────────────────
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DASHBOARD MIC  (fix 3: two-way audio)
+   Request permission right after session starts.
+   Mic is only SENT to a tracker when Speak is active.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function requestDashMic() {
+  if (dashMicStream || dashMicPending) return;
+  dashMicPending = true;
+  navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:true, noiseSuppression:true, sampleRate:44100},
+    video:false
+  }).then(function(stream) {
+    dashMicStream = stream;
+    dashMicPending = false;
+    /* If Speak was already requested while we were waiting, wire it up now */
+    if (speakId) wireSpeak(speakId);
+  }).catch(function(e) {
+    dashMicPending = false;
+    console.warn('Dashboard mic denied:', e);
+  });
+}
+
+/* Toggle speak to the currently selected tracker */
+function toggleDashMic() {
+  if (!selId) { toast('Select a tracker first'); return; }
+  if (speakId === selId) {
+    stopSpeak();
+  } else {
+    startSpeak(selId);
+  }
+}
+
+function startSpeak(id) {
+  /* Stop speaking to whoever was previous */
+  if (speakId && speakId !== id) stopSpeak();
+  speakId = id;
+
+  /* Update Speak button in header */
+  var btn = document.getElementById('mic-btn');
+  var t = trackers.get(id);
+  btn.textContent = '🔴 Speaking: ' + (t ? t.data.name : '…');
+  btn.classList.add('mic-live');
+
+  /* Wire dashboard mic into this tracker's peer */
+  wireSpeak(id);
+
+  /* Re-render card so Speak button turns red */
+  renderCard(id);
+}
+
+function stopSpeak() {
+  if (!speakId) return;
+  var oldId = speakId;
+  speakId = null;
+
+  /* Remove dashboard mic tracks from old peer */
+  var t = trackers.get(oldId);
+  if (t && t.peer && dashMicStream) {
+    t.peer.getSenders().forEach(function(s) {
+      if (s.track && dashMicStream.getAudioTracks().indexOf(s.track) !== -1) {
+        try { t.peer.removeTrack(s); } catch(e){}
+      }
+    });
+  }
+
+  var btn = document.getElementById('mic-btn');
+  btn.textContent = '🎙️ Speak';
+  btn.classList.remove('mic-live');
+
+  renderCard(oldId);
+}
+
+function wireSpeak(id) {
+  if (!dashMicStream) { requestDashMic(); return; } /* will retry when mic arrives */
+  var t = trackers.get(id);
+  if (!t) return;
+
+  /* Make sure a peer connection exists for this tracker */
+  if (!t.peer || t.peer.connectionState === 'closed') {
+    setupPeer(id);
+    return; /* setupPeer will call wireSpeak again after peer is ready */
+  }
+
+  /* Add dashboard mic track if not already present */
+  var senders = t.peer.getSenders();
+  var hasMic = senders.some(function(s){ return s.track && s.track.kind === 'audio' && dashMicStream.getAudioTracks().indexOf(s.track) !== -1; });
+  if (!hasMic) {
+    dashMicStream.getAudioTracks().forEach(function(tr) {
+      t.peer.addTrack(tr, dashMicStream);
+    });
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TRACKER — ADD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function addTracker(data) {
-  const color = COLORS[colorIdx++ % COLORS.length];
-  const iconHtml = `<div class="tracker-marker" id="marker-icon-${data.id}" style="background:${color}"><div class="tracker-marker-inner">${initials(data.name)}</div></div>`;
-  const icon = L.divIcon({ html:iconHtml, className:'', iconSize:[36,36], iconAnchor:[18,36] });
-  const marker = L.marker([data.lat || 22.9, data.lng || 78.6], { icon }).addTo(map);
-  marker.bindPopup(buildPopup(data));
-  marker.on('click', () => selectTracker(data.id));
+  if (trackers.has(data.id)) return;
+  var color = COLORS[colorIdx++ % COLORS.length];
+  var abbr  = initials(data.name);
 
-  const card = document.createElement('div');
-  card.className = 'tracker-card';
-  card.id = 'card-' + data.id;
+  var iconHtml = '<div class="mkr" id="mk-'+data.id+'" style="background:'+color+'">'
+               + '<div class="mkr-in">'+abbr+'</div></div>';
+  var icon = L.divIcon({html:iconHtml, className:'', iconSize:[36,36], iconAnchor:[18,36]});
+  var marker = L.marker([data.lat||22.9, data.lng||78.6], {icon:icon}).addTo(map);
+  marker.bindPopup(popup(data));
+  marker.on('click', (function(id){ return function(){ selectTracker(id); }; })(data.id));
+
+  var card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'card-'+data.id;
+
+  var tdata = {
+    id:data.id, name:data.name, color:color,
+    lat:data.lat||null, lng:data.lng||null,
+    speed:null, battery:null, charging:false, lastSeen:null,
+    raisedHand:false, status:'connected'
+  };
 
   trackers.set(data.id, {
-    data: { ...data, color },
-    marker, card,
-    media: { camOn: false, camFacing: 'environment', micOn: false },
-    peer: null
+    data:tdata, marker:marker, card:card,
+    media:{camOn:false, camFacing:'environment', micOn:false},
+    peer:null, iceBuf:[]
   });
 
   renderCard(data.id);
-  document.getElementById('empty-state')?.remove();
-  document.getElementById('tracker-list-wrap').appendChild(card);
+  var empty = document.getElementById('empty');
+  if (empty) empty.remove();
+  document.getElementById('tracker-list').appendChild(card);
   updateCount();
 }
 
-function updateTrackerLocation(data) {
-  const t = trackers.get(data.id);
-  if (!t) return;
-  Object.assign(t.data, data);
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TRACKER — LOCATION / MEDIA / REMOVE / SELECT / HAND
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function updateLocation(d) {
+  var t = trackers.get(d.id); if (!t) return;
+  if (d.lat     != null) t.data.lat     = d.lat;
+  if (d.lng     != null) t.data.lng     = d.lng;
+  if (d.speed   != null) t.data.speed   = d.speed;
+  if (d.battery != null) t.data.battery = d.battery;
+  if (d.charging!= null) t.data.charging= d.charging;
   t.data.lastSeen = Date.now();
-  if (data.lat && data.lng) {
-    t.marker.setLatLng([data.lat, data.lng]);
-    t.marker.setPopupContent(buildPopup(t.data));
+  if (t.data.lat && t.data.lng) {
+    t.marker.setLatLng([t.data.lat, t.data.lng]);
+    t.marker.setPopupContent(popup(t.data));
   }
-  // If this is the selected tracker, keep map centered
-  if (selectedTrackerId === data.id && data.lat) {
-    map.panTo([data.lat, data.lng], { animate: true, duration: 0.5 });
-  }
-  renderCard(data.id);
+  if (selId === d.id && t.data.lat) map.panTo([t.data.lat, t.data.lng], {animate:true,duration:0.5});
+  renderCard(d.id);
 }
 
-function updateTrackerMedia(id, camOn, camFacing, micOn) {
-  const t = trackers.get(id);
-  if (!t) return;
-  t.media = { camOn, camFacing, micOn };
-
-  // Update cam feed panel name/visibility
-  if (id === activeCamTrackerId) {
-    if (!camOn) closeCamFeed();
-  }
-  if (id === activeMicTrackerId && !micOn) {
-    activeMicTrackerId = null;
-    document.getElementById('cam-feed-audio-indicator').classList.remove('visible');
-  }
-
+function updateMedia(id, camOn, camFacing, micOn) {
+  var t = trackers.get(id); if (!t) return;
+  t.media = {camOn:camOn, camFacing:camFacing, micOn:micOn};
+  if (id === camId && !camOn) closeCamFeed();
+  if (id === micId && !micOn) { micId = null; document.getElementById('audio-bar').classList.remove('show'); }
   renderCard(id);
-  t.marker.setPopupContent(buildPopup(t.data));
+  t.marker.setPopupContent(popup(t.data));
 }
 
 function removeTracker(id) {
-  const t = trackers.get(id);
-  if (!t) return;
-  t.card.classList.add('offline');
+  var t = trackers.get(id); if (!t) return;
   t.data.status = 'disconnected';
-  if (id === activeCamTrackerId) closeCamFeed();
-  if (id === activeMicTrackerId) activeMicTrackerId = null;
-  if (t.peer) { t.peer.close(); t.peer = null; }
-  if (id === selectedTrackerId) selectedTrackerId = null;
-  showToast(`${t.data.name} disconnected`);
+  t.card.classList.add('offline');
+  if (id === camId) closeCamFeed();
+  if (id === micId) { micId = null; document.getElementById('audio-bar').classList.remove('show'); }
+  if (id === speakId) stopSpeak();
+  if (t.peer) { try{t.peer.close();}catch(e){} t.peer=null; }
+  if (id === selId) selId = null;
+  toast(t.data.name+' disconnected');
   updateCount();
 }
 
-// ── SELECT TRACKER (click card or marker) ─────────────────────────────────
+function kickTracker(id) {
+  /* Tell server to force-disconnect this tracker */
+  if (socket && socket.connected) socket.emit('host:kick_tracker', {targetId:id});
+  removeTracker(id);
+}
+
 function selectTracker(id) {
-  // Deselect previous
-  if (selectedTrackerId && selectedTrackerId !== id) {
-    const prev = trackers.get(selectedTrackerId);
-    if (prev) {
-      prev.card.classList.remove('selected');
-      const prevIcon = document.getElementById('marker-icon-' + selectedTrackerId);
-      if (prevIcon) prevIcon.classList.remove('selected-marker');
+  if (selId && selId !== id) {
+    var p = trackers.get(selId);
+    if (p) {
+      p.card.classList.remove('sel');
+      var pm = document.getElementById('mk-'+selId);
+      if (pm) pm.classList.remove('sel');
     }
   }
-  selectedTrackerId = id;
-  const t = trackers.get(id);
-  if (!t) return;
-
-  t.card.classList.add('selected');
-  // Highlight marker
-  const iconEl = document.getElementById('marker-icon-' + id);
-  if (iconEl) iconEl.classList.add('selected-marker');
-
-  // Pan and open popup
-  if (t.data.lat && t.data.lng) {
-    map.setView([t.data.lat, t.data.lng], Math.max(map.getZoom(), 15), { animate: true });
-  }
+  selId = id;
+  var t = trackers.get(id); if (!t) return;
+  t.card.classList.add('sel');
+  var mk = document.getElementById('mk-'+id);
+  if (mk) mk.classList.add('sel');
+  if (t.data.lat) map.setView([t.data.lat, t.data.lng], Math.max(map.getZoom(),15), {animate:true});
   t.marker.openPopup();
-
-  // Scroll card into view
-  t.card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  t.card.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-// ── RAISE HAND ────────────────────────────────────────────────────────────
-function onRaiseHand(id, name, raised) {
-  const t = trackers.get(id);
-  if (!t) return;
+function onHand(id, name, raised) {
+  var t = trackers.get(id); if (!t) return;
   t.data.raisedHand = raised;
+  t.card.classList.toggle('raised', raised);
   renderCard(id);
-
-  if (raised) {
-    showAlertToast(`🙋 ${name} needs attention!`);
-    // Move card to top by re-ordering (CSS order:-1 via class)
-    t.card.classList.add('hand-raised');
-    // Also auto-select them
-    selectTracker(id);
-  } else {
-    t.card.classList.remove('hand-raised');
-    showToast(`${name} lowered their hand`);
-  }
+  if (raised) { alertToast('🙋 '+name+' needs attention!'); selectTracker(id); }
+  else toast(name+' lowered hand');
 }
 
-// ── SEND MEDIA CMD ─────────────────────────────────────────────────────────
-function sendMediaCmd(trackerId, cmd) {
-  if (socket?.connected) socket.emit('host:media_cmd', { targetId: trackerId, cmd });
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MEDIA COMMANDS  dashboard → server → tracker
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function sendCmd(tid, cmd) {
+  if (socket && socket.connected) socket.emit('host:media_cmd', {targetId:tid, cmd:cmd});
 
-  // Update local tracking of active cam/mic
   if (cmd === 'cam_on') {
-    activeCamTrackerId = trackerId;
-    // Show cam feed panel
-    const t = trackers.get(trackerId);
-    document.getElementById('cam-feed-name').textContent = t?.data.name || '—';
-    document.getElementById('cam-feed-panel').classList.add('visible');
-    // Setup WebRTC to receive video
-    setupHostPeer(trackerId);
-  } else if (cmd === 'cam_off') {
-    if (activeCamTrackerId === trackerId) closeCamFeed();
+    camId = tid;
+    var t = trackers.get(tid);
+    document.getElementById('cam-nm').textContent = t ? t.data.name : '—';
+    document.getElementById('cam-panel').classList.add('open');
+    /* KEY FIX 1: Establish peer BEFORE camera opens.
+       The offer is sent immediately. The tracker receives it, opens cam,
+       adds the track, and the stream arrives within 2-4 seconds.
+       This eliminates the 60-90s renegotiation delay. */
+    setupPeer(tid);
+  } else if (cmd === 'cam_off' && camId === tid) {
+    closeCamFeed();
   } else if (cmd === 'mic_on') {
-    activeMicTrackerId = trackerId;
-    document.getElementById('cam-feed-audio-indicator').classList.add('visible');
-    // Also setup peer if not already
-    if (!trackers.get(trackerId)?.peer) setupHostPeer(trackerId);
-  } else if (cmd === 'mic_off') {
-    if (activeMicTrackerId === trackerId) {
-      activeMicTrackerId = null;
-      document.getElementById('cam-feed-audio-indicator').classList.remove('visible');
-    }
+    micId = tid;
+    document.getElementById('audio-bar').classList.add('show');
+    var t2 = trackers.get(tid);
+    if (t2 && !t2.peer) setupPeer(tid);
+  } else if (cmd === 'mic_off' && micId === tid) {
+    micId = null;
+    document.getElementById('audio-bar').classList.remove('show');
   }
 }
 
 function closeCamFeed() {
-  document.getElementById('cam-feed-panel').classList.remove('visible');
-  document.getElementById('cam-feed-video').srcObject = null;
-  activeCamTrackerId = null;
+  document.getElementById('cam-panel').classList.remove('open','big');
+  var vid = document.getElementById('cam-video');
+  if (vid.srcObject) { try{vid.srcObject.getTracks().forEach(function(t){t.stop()});}catch(e){} }
+  vid.srcObject = null;
+  camBig = false;
+  document.getElementById('cam-exp-btn').textContent = '⤢';
+  camId = null;
 }
 
-// ── RENDER CARD ───────────────────────────────────────────────────────────
+function toggleCamExpand() {
+  camBig = !camBig;
+  document.getElementById('cam-panel').classList.toggle('big', camBig);
+  document.getElementById('cam-exp-btn').textContent = camBig ? '⤡' : '⤢';
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RENDER CARD  (fix 4: X button + speak button)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function renderCard(id) {
-  const t = trackers.get(id);
-  if (!t) return;
-  const d = t.data;
-  const m = t.media || { camOn: false, camFacing: 'environment', micOn: false };
+  var t = trackers.get(id); if (!t) return;
+  var d = t.data, m = t.media;
 
-  const bat = d.battery != null ? Math.round(d.battery * 100) : null;
-  const batClass = bat != null ? (bat < 20 ? 'danger' : bat < 40 ? 'warn' : '') : '';
-  const spd = d.speed != null ? (d.speed * 3.6).toFixed(0) + ' km/h' : '—';
-  const seen = d.lastSeen ? timeAgo(d.lastSeen) : '—';
-  const lat = d.lat ? d.lat.toFixed(5) : '—';
-  const lng = d.lng ? d.lng.toFixed(5) : '—';
-  const camFaceLabel = m.camFacing === 'environment' ? 'Rear' : 'Front';
+  var bat = (d.battery != null) ? Math.round(d.battery*100) : null;
+  var bc  = bat!=null ? (bat<20?'d':bat<40?'w':'') : '';
+  var spd = d.speed!=null ? (d.speed*3.6).toFixed(0)+' km/h' : '—';
+  var ago = d.lastSeen ? timeAgo(d.lastSeen) : '—';
+  var lat = d.lat ? d.lat.toFixed(5) : '—';
+  var lng = d.lng ? d.lng.toFixed(5) : '—';
+  var dotCol = d.status==='disconnected' ? 'var(--muted)' : d.color;
 
-  t.card.innerHTML = `
-    <div class="tracker-name-row">
-      <div class="tracker-status-dot" style="background:${d.status==='disconnected'?'#5a6478':d.color}"></div>
-      ${d.name}
-      ${d.raisedHand ? '<span class="hand-badge">🙋</span>' : ''}
-    </div>
-    <div class="tracker-meta">
-      <div class="meta-item">📍 <span class="val">${lat}, ${lng}</span></div>
-      <div class="meta-item">🚀 <span class="val">${spd}</span></div>
-      <div class="meta-item">🕐 <span class="val">${seen}</span></div>
-      <div class="meta-item">🔋 ${bat != null ? `
-        <div class="battery-bar"><div class="battery-fill ${batClass}" style="width:${bat}%"></div></div>
-        <span class="val ${batClass}">${bat}%${d.charging ? ' ⚡' : ''}</span>
-      ` : '<span class="val">—</span>'}</div>
-    </div>
-    <div class="card-media-row">
-      <button class="media-btn ${m.camOn ? 'on' : ''}" data-action="cam" title="${m.camOn?'Camera ON — click to turn off':'Turn camera ON'}">
-        📷 ${m.camOn ? 'Cam ON' : 'Cam'}
-      </button>
-      ${m.camOn ? `<button class="media-btn" data-action="flip" title="Flip camera">⟳ ${camFaceLabel}</button>` : ''}
-      <button class="media-btn ${m.micOn ? 'on' : ''}" data-action="mic" title="${m.micOn?'Mic ON — click to mute':'Turn mic ON'}">
-        🎙️ ${m.micOn ? 'Mic ON' : 'Mic'}
-      </button>
-      <span class="media-btn-spacer"></span>
-      <button class="center-btn" data-action="center">→ Focus</button>
-    </div>
-  `;
+  var batHtml = bat!=null
+    ? '<div class="batbar"><div class="batfill '+bc+'" style="width:'+bat+'%"></div></div><span class="v '+bc+'">'+bat+'%'+(d.charging?' ⚡':'')+'</span>'
+    : '<span class="v">—</span>';
 
-  // Event delegation
-  t.card.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const action = btn.dataset.action;
-      if (action === 'cam')    sendMediaCmd(id, m.camOn ? 'cam_off' : 'cam_on');
-      if (action === 'flip')   sendMediaCmd(id, 'cam_flip');
-      if (action === 'mic')    sendMediaCmd(id, m.micOn ? 'mic_off' : 'mic_on');
-      if (action === 'center') selectTracker(id);
+  var flipHtml = m.camOn
+    ? '<button class="mbtn" data-a="flip">⟳ '+(m.camFacing==='environment'?'Rear':'Front')+'</button>'
+    : '';
+
+  /* Is dashboard currently speaking to THIS tracker? */
+  var amSpeaking = (speakId === id);
+
+  t.card.innerHTML =
+    '<div class="cname">'
+      +'<div class="cdot" style="background:'+dotCol+'"></div>'
+      +d.name
+      +(d.raisedHand?'<span class="hbadge">🙋</span>':'')
+      +'<button class="disc-x" data-a="disc" title="Disconnect">✕</button>'
+    +'</div>'
+    +'<div class="cmeta">'
+      +'<div class="mi">📍<span class="v">'+lat+', '+lng+'</span></div>'
+      +'<div class="mi">🚀<span class="v">'+spd+'</span></div>'
+      +'<div class="mi">🕐<span class="v">'+ago+'</span></div>'
+      +'<div class="mi">🔋'+batHtml+'</div>'
+    +'</div>'
+    +'<div class="cmedia">'
+      +'<button class="mbtn'+(m.camOn?' on':'')+'" data-a="cam">📷 '+(m.camOn?'ON':'Cam')+'</button>'
+      +flipHtml
+      +'<button class="mbtn'+(m.micOn?' on':'')+'" data-a="mic">🎙️ '+(m.micOn?'ON':'Mic')+'</button>'
+      +'<button class="mbtn'+(amSpeaking?' speaking':'')+'" data-a="speak">'+(amSpeaking?'🔴 Speaking':'🗣️ Speak')+'</button>'
+      +'<span class="msp"></span>'
+      +'<button class="focbtn" data-a="focus">→ Focus</button>'
+    +'</div>';
+
+  /* Attach events via delegation — closures capture id and current media state */
+  t.card.onclick = (function(tid, med){
+    return function(e){
+      var btn = e.target.closest('[data-a]');
+      if (btn) {
+        e.stopPropagation();
+        var a = btn.getAttribute('data-a');
+        if (a==='cam')   sendCmd(tid, med.camOn?'cam_off':'cam_on');
+        if (a==='flip')  sendCmd(tid, 'cam_flip');
+        if (a==='mic')   sendCmd(tid, med.micOn?'mic_off':'mic_on');
+        if (a==='speak') { if(speakId===tid) stopSpeak(); else startSpeak(tid); }
+        if (a==='focus') selectTracker(tid);
+        if (a==='disc')  kickTracker(tid);
+      } else {
+        selectTracker(tid);
+      }
+    };
+  })(id, m);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   POPUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function popup(d) {
+  var bat = d.battery!=null ? Math.round(d.battery*100) : null;
+  var bs  = bat!=null ? bat+'%'+(d.charging?' ⚡':'') : '—';
+  var bc  = bat!=null ? (bat<20?'d':bat<40?'w':'a') : '';
+  var spd = d.speed!=null ? (d.speed*3.6).toFixed(0)+' km/h' : '—';
+  return '<div class="pname">'+d.name+(d.raisedHand?' 🙋':'')+'</div>'
+    +'<div class="prow">📍 <span>'+(d.lat?d.lat.toFixed(6):'—')+', '+(d.lng?d.lng.toFixed(6):'—')+'</span></div>'
+    +'<div class="prow">🚀 <span>'+spd+'</span></div>'
+    +'<div class="prow">🔋 <span class="'+bc+'">'+bs+'</span></div>'
+    +'<div class="prow">🕐 <span>'+(d.lastSeen?timeAgo(d.lastSeen):'—')+'</span></div>';
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   WebRTC  — KEY FIXES:
+   • setupPeer sends offer BEFORE cam/mic opens (fix 1 — no 60s wait)
+   • dashboard mic track added to peer when present (fix 3 — two-way audio)
+   • ICE candidates buffered until remote desc ready
+   • auto ICE restart on failure
+   • audio autoplay unlock on first click
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Unlock remote-audio on first click (Chrome autoplay policy) */
+document.addEventListener('click', function unlockAu(){
+  var au = document.getElementById('remote-audio');
+  if (au) au.play().catch(function(){});
+  document.removeEventListener('click', unlockAu);
+});
+
+function newPC(tid) {
+  var t = trackers.get(tid); if (!t) return null;
+  if (t.peer) { try{t.peer.close();}catch(e){} t.peer=null; }
+  t.iceBuf = [];
+
+  var pc = new RTCPeerConnection({iceServers:iceServers, iceCandidatePoolSize:10});
+  t.peer = pc;
+
+  pc.onicecandidate = function(ev) {
+    if (ev.candidate && socket && socket.connected)
+      socket.emit('webrtc:ice', {targetId:tid, candidate:ev.candidate});
+  };
+
+  pc.onconnectionstatechange = function() {
+    if (pc.connectionState === 'failed') {
+      try { pc.restartIce(); } catch(e){}
+      setTimeout(function(){
+        if (pc.connectionState==='failed') {
+          var t2 = trackers.get(tid);
+          if (t2 && t2.peer===pc) setupPeer(tid);
+        }
+      }, 3000);
+    }
+  };
+
+  /* Incoming tracks: video → cam panel, audio → speaker */
+  pc.ontrack = function(ev) {
+    var track = ev.track;
+    if (track.kind==='video') {
+      var vid = document.getElementById('cam-video');
+      if (!(vid.srcObject instanceof MediaStream)) vid.srcObject = new MediaStream();
+      vid.srcObject.getVideoTracks().forEach(function(old){ vid.srcObject.removeTrack(old); });
+      vid.srcObject.addTrack(track);
+      vid.play().catch(function(){});
+    }
+    if (track.kind==='audio') {
+      var au = document.getElementById('remote-audio');
+      if (!(au.srcObject instanceof MediaStream)) au.srcObject = new MediaStream();
+      au.srcObject.getAudioTracks().forEach(function(old){ au.srcObject.removeTrack(old); });
+      au.srcObject.addTrack(track);
+      au.volume = 1.0;
+      au.play().catch(function(){});
+      document.getElementById('audio-bar').classList.add('show');
+    }
+  };
+
+  /* Add dashboard mic NOW if we're speaking to this tracker */
+  if (speakId === tid && dashMicStream) {
+    dashMicStream.getAudioTracks().forEach(function(tr){
+      pc.addTrack(tr, dashMicStream);
     });
-  });
-  t.card.addEventListener('click', () => selectTracker(id));
-}
-
-// ── POPUP ─────────────────────────────────────────────────────────────────
-function buildPopup(d) {
-  const bat = d.battery != null ? Math.round(d.battery * 100) : null;
-  const batStr = bat != null ? bat + '%' + (d.charging ? ' ⚡' : '') : '—';
-  const batCls = bat != null ? (bat < 20 ? 'danger' : bat < 40 ? 'warn' : 'accent') : '';
-  const spd = d.speed != null ? (d.speed * 3.6).toFixed(0) + ' km/h' : '—';
-  return `
-    <div class="popup-name">${d.name}${d.raisedHand ? ' 🙋' : ''}</div>
-    <div class="popup-row">📍 <span>${d.lat ? d.lat.toFixed(6) : '—'}, ${d.lng ? d.lng.toFixed(6) : '—'}</span></div>
-    <div class="popup-row">🚀 Speed: <span>${spd}</span></div>
-    <div class="popup-row">🔋 Battery: <span class="${batCls}">${batStr}</span></div>
-    <div class="popup-row">🕐 <span>${d.lastSeen ? timeAgo(d.lastSeen) : '—'}</span></div>
-  `;
-}
-
-// ── WebRTC (host side) ────────────────────────────────────────────────────
-async function setupHostPeer(trackerId) {
-  const t = trackers.get(trackerId);
-  if (!t) return;
-  if (t.peer) { t.peer.close(); t.peer = null; }
-
-  const pc = new RTCPeerConnection({ iceServers:[{ urls:'stun:stun.l.google.com:19302' },{ urls:'stun:stun1.l.google.com:19302' }] });
-  t.peer = pc;
-
-  pc.onicecandidate = ({ candidate }) => {
-    if (candidate) socket.emit('webrtc:ice', { targetId: trackerId, candidate });
-  };
-
-  // Incoming stream from tracker (cam video + mic audio)
-  pc.ontrack = ({ streams }) => {
-    if (!streams[0]) return;
-    const stream = streams[0];
-    // Video → cam feed panel
-    const videoTracks = stream.getVideoTracks();
-    if (videoTracks.length > 0) {
-      const vs = new MediaStream(videoTracks);
-      document.getElementById('cam-feed-video').srcObject = vs;
-    }
-    // Audio → host-remote-audio
-    const audioTracks = stream.getAudioTracks();
-    if (audioTracks.length > 0) {
-      const as = new MediaStream(audioTracks);
-      document.getElementById('host-remote-audio').srcObject = as;
-      document.getElementById('cam-feed-audio-indicator').classList.add('visible');
-    }
-  };
-
-  // Send offer to tracker
-  const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
-  await pc.setLocalDescription(offer);
-  socket.emit('webrtc:offer', { targetId: trackerId, offer });
-}
-
-async function onTrackerAnswer(fromId, answer) {
-  const t = trackers.get(fromId);
-  if (t?.peer) {
-    try { await t.peer.setRemoteDescription(new RTCSessionDescription(answer)); } catch(e) {}
   }
+
+  return pc;
 }
 
-async function onTrackerOffer(fromId, offer) {
-  // Tracker initiated — set up peer to receive
-  const t = trackers.get(fromId);
-  if (!t) return;
-  if (t.peer) { t.peer.close(); }
-  const pc = new RTCPeerConnection({ iceServers:[{ urls:'stun:stun.l.google.com:19302' }] });
-  t.peer = pc;
-  pc.onicecandidate = ({ candidate }) => { if (candidate) socket.emit('webrtc:ice', { targetId: fromId, candidate }); };
-  pc.ontrack = ({ streams }) => {
-    if (!streams[0]) return;
-    const videoTracks = streams[0].getVideoTracks();
-    if (videoTracks.length > 0) document.getElementById('cam-feed-video').srcObject = new MediaStream(videoTracks);
-    const audioTracks = streams[0].getAudioTracks();
-    if (audioTracks.length > 0) document.getElementById('host-remote-audio').srcObject = new MediaStream(audioTracks);
-  };
-  await pc.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await pc.createAnswer();
-  await pc.setLocalDescription(answer);
-  socket.emit('webrtc:answer', { targetId: fromId, answer });
+/* Send offer immediately — tracker will answer with streams already attached */
+async function setupPeer(tid) {
+  var pc = newPC(tid); if (!pc) return;
+  try {
+    var offer = await pc.createOffer({offerToReceiveAudio:true, offerToReceiveVideo:true});
+    await pc.setLocalDescription(offer);
+    if (socket && socket.connected) socket.emit('webrtc:offer', {targetId:tid, offer:offer});
+    /* If speak was requested and mic is now ready, wire it */
+    if (speakId === tid && dashMicStream) wireSpeak(tid);
+  } catch(e){ console.warn('setupPeer:', e); }
 }
 
-async function onTrackerIce(fromId, candidate) {
-  const t = trackers.get(fromId);
-  if (t?.peer && candidate) {
-    try { await t.peer.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
-  }
+async function handleAnswer(fromId, answer) {
+  var t = trackers.get(fromId); if (!t||!t.peer) return;
+  if (t.peer.signalingState !== 'have-local-offer') return;
+  try {
+    await t.peer.setRemoteDescription(new RTCSessionDescription(answer));
+    for (var i=0;i<t.iceBuf.length;i++) {
+      try { await t.peer.addIceCandidate(new RTCIceCandidate(t.iceBuf[i])); }catch(e){}
+    }
+    t.iceBuf = [];
+  } catch(e){ console.warn('handleAnswer:', e); }
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────
-function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
-function timeAgo(ts) {
-  const s = Math.floor((Date.now()-ts)/1000);
-  if (s < 5) return 'just now';
-  if (s < 60) return s+'s ago';
-  return Math.floor(s/60)+'m ago';
+async function handleOffer(fromId, offer) {
+  var pc = newPC(fromId); if (!pc) return;
+  try {
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    var answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    if (socket && socket.connected) socket.emit('webrtc:answer', {targetId:fromId, answer:answer});
+    var t = trackers.get(fromId);
+    if (t) {
+      for (var i=0;i<t.iceBuf.length;i++){
+        try{await pc.addIceCandidate(new RTCIceCandidate(t.iceBuf[i]));}catch(e){}
+      }
+      t.iceBuf = [];
+    }
+  } catch(e){ console.warn('handleOffer:', e); }
 }
-function updateCount() {
-  document.getElementById('tracker-count').textContent = [...trackers.values()].filter(t=>t.data.status!=='disconnected').length;
+
+async function handleIce(fromId, candidate) {
+  var t = trackers.get(fromId); if (!t) return;
+  if (!t.peer || !t.peer.remoteDescription) { t.iceBuf.push(candidate); return; }
+  try { await t.peer.addIceCandidate(new RTCIceCandidate(candidate)); }catch(e){}
 }
-function showToast(msg, cls='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + cls;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-function showAlertToast(msg) { showToast(msg, 'alert'); }
 
-// ════════════════════════════════════════════════════════════
-// GESTURE CONTROL
-// ════════════════════════════════════════════════════════════
-const videoElement = document.getElementById('ai-webcam');
-const canvasElement = document.getElementById('ai-canvas');
-const canvasCtx = canvasElement.getContext('2d');
-const gestureLabel = document.getElementById('gesture-label');
-const gestureUI = document.getElementById('gesture-ui');
-const toggleBtn = document.getElementById('gesture-toggle-btn');
-const fistCursor = document.getElementById('fist-cursor');
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GESTURE CONTROL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+var gvid = document.getElementById('g-webcam');
+var gcvs = document.getElementById('g-canvas');
+var gctx = gcvs.getContext('2d');
+var glbl = document.getElementById('glabel');
+var gbox = document.getElementById('gbox');
+var gbtn = document.getElementById('gest-btn');
+var fcur = document.getElementById('fcursor');
+var mapEl= document.getElementById('map');
 
-let gestureActive = false;
-let handsInstance = null;
-let cameraInstance = null;
-let lastGestureTime = 0;
-const GESTURE_DEBOUNCE = 800;
-
-// Fist pan
-let fistActive = false;
-let fistPrevX = null, fistPrevY = null;
-const PAN_SCALE = 3.0;
+var gOn=false, gHands=null, gCam=null, gLast=0, GDEB=900;
+var fOn=false, fPX=null, fPY=null, PAN=4.5;
 
 function toggleGesture() {
-  gestureActive = !gestureActive;
-  if (gestureActive) {
-    toggleBtn.classList.add('active');
-    gestureUI.classList.add('visible');
-    gestureLabel.textContent = 'Starting…';
-    startGestureCamera();
-  } else {
-    toggleBtn.classList.remove('active');
-    gestureUI.classList.remove('visible');
-    stopGestureCamera();
-    endFistPan();
-  }
+  gOn = !gOn;
+  if (gOn) { gbtn.classList.add('on'); gbox.classList.add('show'); glbl.textContent='Starting…'; startGCam(); }
+  else { gbtn.classList.remove('on'); gbox.classList.remove('show'); stopGCam(); endFist(); }
 }
-
-function startGestureCamera() {
-  if (!handsInstance) {
-    handsInstance = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-    handsInstance.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.7, minTrackingConfidence:0.6 });
-    handsInstance.onResults(onHandResults);
+function startGCam() {
+  if (!gHands) {
+    gHands = new Hands({locateFile:function(f){return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f;}});
+    gHands.setOptions({maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.72, minTrackingConfidence:0.6});
+    gHands.onResults(onGR);
   }
-  cameraInstance = new Camera(videoElement, {
-    onFrame: async () => { await handsInstance.send({ image: videoElement }); },
-    width: 320, height: 240
+  gCam = new Camera(gvid, {onFrame:async function(){await gHands.send({image:gvid});}, width:320, height:240});
+  gCam.start().then(function(){glbl.textContent='👋 Show a gesture';}).catch(function(){
+    glbl.textContent='⚠ Camera denied'; gOn=false; gbtn.classList.remove('on'); gbox.classList.remove('show');
   });
-  cameraInstance.start()
-    .then(() => { gestureLabel.textContent = '👋 Show a gesture'; })
-    .catch(() => {
-      gestureLabel.textContent = '⚠ Camera denied';
-      showToast('Camera permission denied for gestures.');
-      gestureActive = false;
-      toggleBtn.classList.remove('active');
-      gestureUI.classList.remove('visible');
-    });
 }
-
-function stopGestureCamera() {
-  if (cameraInstance) { cameraInstance.stop(); cameraInstance = null; }
-  canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-  gestureLabel.textContent = 'Camera off';
+function stopGCam(){ if(gCam){gCam.stop();gCam=null;} gctx.clearRect(0,0,gcvs.width,gcvs.height); glbl.textContent='Camera off'; }
+function startFist(x,y){ fOn=true;fPX=x;fPY=y; fcur.style.display='flex'; mapEl.classList.add('fist'); map.dragging.disable(); glbl.textContent='✊ Panning…'; }
+function moveFist(x,y){
+  if(!fOn||fPX==null)return;
+  var dx=-(x-fPX), dy=y-fPY; fPX=x; fPY=y;
+  if(Math.abs(dx)>0.002||Math.abs(dy)>0.002) map.panBy([dx*mapEl.offsetWidth*PAN,dy*mapEl.offsetHeight*PAN],{animate:false});
+  fcur.style.left=((1-x)*mapEl.offsetWidth)+'px'; fcur.style.top=(y*mapEl.offsetHeight+52)+'px';
 }
-
-function startFistPan(x, y) {
-  fistActive = true; fistPrevX = x; fistPrevY = y;
-  fistCursor.style.display = 'flex';
-  mapEl.classList.add('fist-active');
-  map.dragging.disable();
-  gestureLabel.textContent = '✊ Panning…';
+function endFist(){ fOn=false;fPX=fPY=null; fcur.style.display='none'; mapEl.classList.remove('fist'); if(map)map.dragging.enable(); }
+function isFist(lm){ return lm[8].y>lm[6].y&&lm[12].y>lm[10].y&&lm[16].y>lm[14].y&&lm[20].y>lm[18].y; }
+function isOk(lm){ return Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y)<0.07&&lm[12].y<lm[10].y&&lm[16].y<lm[14].y&&lm[20].y<lm[18].y; }
+function fCnt(lm){ return [lm[8].y<lm[6].y,lm[12].y<lm[10].y,lm[16].y<lm[14].y,lm[20].y<lm[18].y].filter(Boolean).length; }
+function onGR(res){
+  gctx.save(); gctx.clearRect(0,0,gcvs.width,gcvs.height); gctx.drawImage(res.image,0,0,gcvs.width,gcvs.height);
+  if(!res.multiHandLandmarks||!res.multiHandLandmarks.length){ if(fOn)endFist(); glbl.textContent='👋 Show a gesture'; gctx.restore(); return; }
+  var lm=res.multiHandLandmarks[0], now=Date.now(), ok=(now-gLast)>GDEB;
+  var fist=isFist(lm), oks=isOk(lm);
+  var iu=lm[8].y<lm[6].y, mu=lm[12].y<lm[10].y, ru=lm[16].y<lm[14].y, pu=lm[20].y<lm[18].y;
+  var vic=iu&&mu&&!ru&&!pu, five=fCnt(lm)===4&&(lm[4].y<lm[3].y||lm[4].x<lm[3].x);
+  if(fist){ if(!fOn)startFist(lm[0].x,lm[0].y); else moveFist(lm[0].x,lm[0].y); gctx.restore(); return; }
+  else { if(fOn)endFist(); }
+  if(oks&&ok){ gLast=now; glbl.textContent='👌 Recentering…'; var pts=[]; trackers.forEach(function(t){if(t.marker)pts.push(t.marker);}); if(pts.length)map.fitBounds(L.featureGroup(pts).getBounds(),{padding:[40,40]}); else map.setView([22.9,78.6],5); setTimeout(function(){glbl.textContent='👋 Show a gesture';},1200); }
+  else if(vic&&!oks&&ok){ gLast=now; glbl.textContent='✌️ Zooming in'; map.zoomIn(); setTimeout(function(){glbl.textContent='👋 Show a gesture';},1000); }
+  else if(five&&!oks&&ok){ gLast=now; glbl.textContent='🖐️ Zooming out'; map.zoomOut(); setTimeout(function(){glbl.textContent='👋 Show a gesture';},1000); }
+  else if(!ok){} else glbl.textContent='👋 Show a gesture';
+  gctx.restore();
 }
-function updateFistPan(x, y) {
-  if (!fistActive || fistPrevX == null) return;
-  const dx = x - fistPrevX, dy = y - fistPrevY;
-  fistPrevX = x; fistPrevY = y;
-  map.panBy([-dx * mapEl.offsetWidth * PAN_SCALE, dy * mapEl.offsetHeight * PAN_SCALE], { animate:false });
-  fistCursor.style.left = ((1-x)*mapEl.offsetWidth)+'px';
-  fistCursor.style.top  = (y*mapEl.offsetHeight+52)+'px';
-}
-function endFistPan() {
-  fistActive = false; fistPrevX = fistPrevY = null;
-  fistCursor.style.display = 'none';
-  mapEl.classList.remove('fist-active');
-  map.dragging.enable();
-}
+var gdrag=false,gdx=0,gdy=0;
+gbox.addEventListener('mousedown',function(e){gdrag=true;var r=gbox.getBoundingClientRect();gdx=e.clientX-r.left;gdy=e.clientY-r.top;gbox.style.transition='none';});
+document.addEventListener('mousemove',function(e){if(!gdrag)return;gbox.style.left=(e.clientX-gdx)+'px';gbox.style.top=(e.clientY-gdy)+'px';gbox.style.bottom='auto';gbox.style.right='auto';});
+document.addEventListener('mouseup',function(){gdrag=false;});
 
-function isFist(lm) {
-  return lm[8].y>lm[6].y && lm[12].y>lm[10].y && lm[16].y>lm[14].y && lm[20].y>lm[18].y;
-}
-function fingerCount(lm) {
-  return [lm[8].y<lm[6].y, lm[12].y<lm[10].y, lm[16].y<lm[14].y, lm[20].y<lm[18].y].filter(Boolean).length;
-}
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HELPERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function initials(n){ return n.trim().split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'??'; }
+function timeAgo(ts){ var s=Math.floor((Date.now()-ts)/1000); if(s<5)return 'just now'; if(s<60)return s+'s ago'; return Math.floor(s/60)+'m ago'; }
+function updateCount(){ var n=0; trackers.forEach(function(t){if(t.data.status!=='disconnected')n++;}); document.getElementById('cnt').textContent=n; }
+function toast(msg,cls){ var el=document.getElementById('toast'); el.textContent=msg; el.className='show'+(cls?' '+cls:''); clearTimeout(toastTid); toastTid=setTimeout(function(){el.classList.remove('show');},3200); }
+function alertToast(msg){ toast(msg,'alert'); }
 
-function onHandResults(results) {
-  canvasCtx.save();
-  canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-  canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BOOT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+(function boot(){
+  /* Restore map theme (default: sat + dark UI) */
+  var savedMap = 'sat', savedUI = 'dark';
+  try { savedMap = localStorage.getItem('lt_map') || 'sat'; } catch(e){}
+  try { savedUI  = localStorage.getItem('lt_ui')  || 'dark'; }catch(e){}
+  mapTheme = savedMap;
+  applyUITheme(savedUI);
+  document.getElementById('theme-btn').textContent = THEME_LABELS[mapTheme];
 
-  if (!results.multiHandLandmarks?.length) {
-    if (fistActive) endFistPan();
-    gestureLabel.textContent = '👋 Show a gesture';
-    canvasCtx.restore(); return;
-  }
+  initMap();
 
-  const lm = results.multiHandLandmarks[0];
-  const now = Date.now();
-  const canFire = now - lastGestureTime > GESTURE_DEBOUNCE;
+  /* Refresh timestamps every 10 s */
+  setInterval(function(){
+    trackers.forEach(function(t,id){ if(t.data.status!=='disconnected') renderCard(id); });
+  }, 10000);
 
-  const fist    = isFist(lm);
-  const fingers = fingerCount(lm);
-  const iUp = lm[8].y<lm[6].y, mUp = lm[12].y<lm[10].y, rUp = lm[16].y<lm[14].y, pUp = lm[20].y<lm[18].y;
-  const thumbUp = lm[4].y<lm[3].y && !iUp && !mUp && !rUp && !pUp;
-  const victory = iUp && mUp && !rUp && !pUp;
-  const allFive = fingers===4 && (lm[4].y<lm[3].y||lm[4].x<lm[3].x);
+  /* Enter key on config inputs */
+  document.getElementById('inp-url').addEventListener('keydown', function(e){if(e.key==='Enter')startSession();});
+  document.getElementById('inp-name').addEventListener('keydown',function(e){if(e.key==='Enter')startSession();});
+})();
 
-  if (fist) {
-    if (!fistActive) startFistPan(lm[0].x, lm[0].y);
-    else updateFistPan(lm[0].x, lm[0].y);
-    canvasCtx.restore(); return;
-  } else { if (fistActive) endFistPan(); }
+/* Expose onclick handlers */
+window.startSession    = startSession;
+window.toggleTheme     = toggleTheme;
+window.toggleSidebar   = toggleSidebar;
+window.toggleGesture   = toggleGesture;
+window.toggleCamExpand = toggleCamExpand;
+window.closeCamFeed    = closeCamFeed;
+window.toggleDashMic   = toggleDashMic;
 
-  if (thumbUp && canFire) {
-    lastGestureTime = now;
-    gestureLabel.textContent = '👍 Recentering…';
-    const markers = [...trackers.values()].map(t=>t.marker).filter(Boolean);
-    if (markers.length) map.fitBounds(L.featureGroup(markers).getBounds(), { padding:[40,40] });
-    else map.setView([22.9,78.6],5);
-    setTimeout(()=>{gestureLabel.textContent='👋 Show a gesture';},1200);
-  } else if (victory && canFire) {
-    lastGestureTime = now;
-    gestureLabel.textContent = '✌️ Zooming in';
-    map.zoomIn();
-    setTimeout(()=>{gestureLabel.textContent='👋 Show a gesture';},1000);
-  } else if (allFive && canFire) {
-    lastGestureTime = now;
-    gestureLabel.textContent = '🖐️ Zooming out';
-    map.zoomOut();
-    setTimeout(()=>{gestureLabel.textContent='👋 Show a gesture';},1000);
-  } else if (!canFire) {
-    // debounce — keep label
-  } else {
-    gestureLabel.textContent = '👋 Show a gesture';
-  }
-  canvasCtx.restore();
-}
-
-// Drag gesture box
-let isDragging=false, dragOffX=0, dragOffY=0;
-gestureUI.addEventListener('mousedown', e => { isDragging=true; const r=gestureUI.getBoundingClientRect(); dragOffX=e.clientX-r.left; dragOffY=e.clientY-r.top; gestureUI.style.transition='none'; });
-document.addEventListener('mousemove', e => { if (!isDragging) return; gestureUI.style.left=(e.clientX-dragOffX)+'px'; gestureUI.style.top=(e.clientY-dragOffY)+'px'; gestureUI.style.bottom='auto'; gestureUI.style.right='auto'; });
-document.addEventListener('mouseup', ()=>{ isDragging=false; });
-
-// ── BOOT ──────────────────────────────────────────────────────────────────
-initMap();
-setInterval(() => { trackers.forEach((t,id)=>{ if(t.data.status!=='disconnected') renderCard(id); }); }, 10000);
+})();
 </script>
 </body>
 </html>
