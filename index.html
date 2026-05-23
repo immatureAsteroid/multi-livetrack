@@ -526,24 +526,41 @@ function stopSpeak() {
 }
 
 function wireSpeak(id) {
-  if (!dashMicStream) { requestDashMic(); return; } /* will retry when mic arrives */
+  if (!dashMicStream) { requestDashMic(); return; }
   var t = trackers.get(id);
   if (!t) return;
 
-  /* Make sure a peer connection exists for this tracker */
-  if (!t.peer || t.peer.connectionState === 'closed') {
+  /* No peer yet — create one (it will also carry the mic track) */
+  if (!t.peer || t.peer.connectionState === 'closed' || t.peer.connectionState === 'failed') {
     setupPeer(id);
-    return; /* setupPeer will call wireSpeak again after peer is ready */
+    return;
   }
 
-  /* Add dashboard mic track if not already present */
+  /* Check if dashboard mic track is already a sender on this peer */
   var senders = t.peer.getSenders();
-  var hasMic = senders.some(function(s){ return s.track && s.track.kind === 'audio' && dashMicStream.getAudioTracks().indexOf(s.track) !== -1; });
-  if (!hasMic) {
-    dashMicStream.getAudioTracks().forEach(function(tr) {
-      t.peer.addTrack(tr, dashMicStream);
-    });
-  }
+  var hasMic = senders.some(function(s){
+    return s.track && s.track.kind === 'audio' &&
+           dashMicStream.getAudioTracks().indexOf(s.track) !== -1;
+  });
+  if (hasMic) return; /* already wired, nothing to do */
+
+  /* Add the mic track — then renegotiate so mobile receives it.
+     We use onnegotiationneeded by just adding the track; the browser
+     fires it automatically and we catch it to send a fresh offer. */
+  dashMicStream.getAudioTracks().forEach(function(tr) {
+    t.peer.addTrack(tr, dashMicStream);
+  });
+
+  /* Manually trigger renegotiation — send fresh offer to mobile */
+  (async function() {
+    try {
+      var offer = await t.peer.createOffer();
+      await t.peer.setLocalDescription(offer);
+      if (socket && socket.connected) {
+        socket.emit('webrtc:offer', { targetId: id, offer: offer });
+      }
+    } catch(e) { console.warn('wireSpeak renegotiate:', e); }
+  })();
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -837,7 +854,13 @@ function newPC(tid) {
       if (!(vid.srcObject instanceof MediaStream)) vid.srcObject = new MediaStream();
       vid.srcObject.getVideoTracks().forEach(function(old){ vid.srcObject.removeTrack(old); });
       vid.srcObject.addTrack(track);
-      vid.play().catch(function(){});
+      // Must call play() explicitly — autoplay alone is not reliable when srcObject changes
+      vid.muted = true;  // muted required for autoplay policy
+      vid.play().catch(function(e){ console.warn('video play failed:', e); });
+      // Ensure cam panel is visible
+      if (!document.getElementById('cam-panel').classList.contains('open')) {
+        document.getElementById('cam-panel').classList.add('open');
+      }
     }
     if (track.kind==='audio') {
       var au = document.getElementById('remote-audio');
@@ -874,6 +897,7 @@ async function setupPeer(tid) {
 
 async function handleAnswer(fromId, answer) {
   var t = trackers.get(fromId); if (!t||!t.peer) return;
+  /* Accept answer if we have a local offer pending (initial or renegotiation) */
   if (t.peer.signalingState !== 'have-local-offer') return;
   try {
     await t.peer.setRemoteDescription(new RTCSessionDescription(answer));

@@ -392,33 +392,63 @@ function startTracking() {
   });
 
   // ── WebRTC signaling ───────────────────────────────────────────────────
-  // Dashboard sends offer → tracker answers WITH streams already attached.
-  // This is the KEY FIX for the 60-90s delay: we add cam/mic tracks
-  // BEFORE calling createAnswer(), so they're in the initial SDP.
-  // No onnegotiationneeded renegotiation = streams arrive in 2-4 seconds.
+  // KEY ARCHITECTURE:
+  // 1. Dashboard presses Cam ON
+  // 2. Server sends `tracker:media_cmd cam_on` AND `host:media_cmd cam_on` to dashboard
+  // 3. Dashboard calls setupPeer() → sends webrtc:offer to tracker
+  // 4. Mobile: tracker:media_cmd fires → startCamera() starts (async)
+  //            webrtc:offer fires    → we WAIT for camera to open
+  //            then add track + createAnswer → video in initial SDP
+  //            no renegotiation → video arrives in 2-4 seconds
+
   socket.on('webrtc:offer', async function(d) {
     hostSocketId = d.fromId;
-    await buildPeer(d.fromId);
+
+    // If peer already exists and is connected, this is a RENEGOTIATION offer
+    // (e.g. dashboard pressed Speak and added its mic track).
+    // In this case do NOT rebuild the peer — just accept the new offer and answer.
+    var isRenegotiation = peerConn &&
+      peerConn.connectionState !== 'closed' &&
+      peerConn.connectionState !== 'failed' &&
+      peerConn.signalingState  === 'stable';
+
+    if (!isRenegotiation) {
+      // Fresh connection — rebuild peer
+      await buildPeer(d.fromId);
+    }
 
     try {
       await peerConn.setRemoteDescription(new RTCSessionDescription(d.offer));
 
-      // Add any already-open streams BEFORE answering
-      if (camStream) {
-        camStream.getVideoTracks().forEach(function(t){
-          if (!senderExists('video')) peerConn.addTrack(t, camStream);
+      // For initial offer only: wait for camera to open before answering
+      if (!isRenegotiation && !camStream) {
+        await new Promise(function(resolve) {
+          var waited = 0;
+          var check = setInterval(function() {
+            waited += 100;
+            if (camStream || waited >= 3000) { clearInterval(check); resolve(); }
+          }, 100);
         });
       }
-      if (micStream) {
-        micStream.getAudioTracks().forEach(function(t){
-          if (!senderExists('audio')) peerConn.addTrack(t, micStream);
-        });
+
+      // Add streams BEFORE answering (initial offer only — on renegotiation they're already senders)
+      if (!isRenegotiation) {
+        if (camStream) {
+          camStream.getVideoTracks().forEach(function(t){
+            if (!senderExists('video')) peerConn.addTrack(t, camStream);
+          });
+        }
+        if (micStream) {
+          micStream.getAudioTracks().forEach(function(t){
+            if (!senderExists('audio')) peerConn.addTrack(t, micStream);
+          });
+        }
       }
 
       var answer = await peerConn.createAnswer();
       await peerConn.setLocalDescription(answer);
-      socket.emit('webrtc:answer', {targetId:d.fromId, answer:answer});
-    } catch(e) { console.warn('webrtc:offer handling error', e); }
+      socket.emit('webrtc:answer', { targetId: d.fromId, answer: answer });
+    } catch(e) { console.warn('webrtc:offer error:', e); }
   });
 
   socket.on('webrtc:answer', async function(d) {
@@ -457,11 +487,13 @@ function buildPeer(remoteId) {
     if (track.kind === 'audio') {
       var au = document.getElementById('remote-audio');
       if (!(au.srcObject instanceof MediaStream)) au.srcObject = new MediaStream();
+      // Remove old audio tracks, add new one
       au.srcObject.getAudioTracks().forEach(function(old){ au.srcObject.removeTrack(old); });
       au.srcObject.addTrack(track);
       au.volume = 1.0;
-      au.play().catch(function(){});
-      // Show "organiser is speaking" indicator
+      au.muted  = false;
+      // Explicit play() required — mobile Safari blocks autoplay without it
+      au.play().catch(function(e){ console.warn('remote-audio play failed:', e); });
       document.getElementById('speak-indicator').classList.add('show');
       track.onended = function() {
         document.getElementById('speak-indicator').classList.remove('show');

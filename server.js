@@ -180,7 +180,9 @@ io.on('connection', (socket) => {
   });
 
   // ── WebRTC signaling relay ─────────────────────────────────────────────────
-  // Server is just a relay — media flows peer-to-peer (or via TURN)
+  // Server is just a relay — media flows peer-to-peer (or via TURN).
+  // Note: the dashboard is responsible for sending webrtc:offer AFTER
+  // host:media_cmd so the tracker has time to open camera first.
   socket.on('webrtc:offer',  ({ targetId, offer })     => io.to(targetId).emit('webrtc:offer',  { fromId: socket.id, offer }));
   socket.on('webrtc:answer', ({ targetId, answer })    => io.to(targetId).emit('webrtc:answer', { fromId: socket.id, answer }));
   socket.on('webrtc:ice',    ({ targetId, candidate }) => io.to(targetId).emit('webrtc:ice',    { fromId: socket.id, candidate }));
